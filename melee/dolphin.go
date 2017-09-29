@@ -20,19 +20,22 @@ type Dolphin struct {
 	MemoryPath   string
 	PipesPath    string
 	GameState    GameState
+	RUNNING      bool
 }
 
 func NewDolphin() Dolphin {
 	d := Dolphin{}
-	d.SetPath("/Users/christian/Desktop/FM5.7/User")
+	d.SetPath("/Users/christian/Desktop/FM/Dolphin.app/Contents/Resources/User")
+	d.RUNNING = true
+	//d.SetPath("/Users/christian/Library/Application Support/Dolphin")
 
 	if d.MemoryPath != "" {
 		_ = os.Mkdir(d.MemoryPath, os.ModePerm)
-		fmt.Println("Created MemoryWatcher path")
+		//fmt.Println("Created MemoryWatcher path")
 	}
 	if d.PipesPath != "" {
 		_ = os.Mkdir(d.PipesPath, os.ModePerm)
-		fmt.Println("Created Pipes path")
+		//fmt.Println("Created Pipes path")
 	}
 
 	return d
@@ -46,7 +49,7 @@ func (d *Dolphin) Initialize() bool {
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			fmt.Println("Copied Memory Locations list")
+			fmt.Println("Copied Memory Address list")
 		}
 		d.GameState = NewGameState(d)
 	}
@@ -56,6 +59,7 @@ func (d *Dolphin) Initialize() bool {
 
 func (d *Dolphin) SetPath(path string) bool {
 	ex, _ := FilepathExists(path)
+
 	if ex {
 		d.DolphinPath = path
 		d.MemoryPath = filepath.Join(path, "MemoryWatcher/")
