@@ -63,10 +63,30 @@ func run() {
 
 	newFrame := make(chan bool)
 
-	d.GameState.Update(newFrame)
-
 	for d.RUNNING {
-		fmt.Fprintln(writer, d.GameState.Players[1].Values[CHARACTER])
+		d.GameState.Update(newFrame)
 		<-newFrame
+
+		speed, err := d.GameState.Players[1].GetFloat(SPEED_ANIMATION)
+		if err != nil {
+			//continue
+		}
+
+		action, err := d.GameState.Players[1].GetAction()
+		if err != nil {
+			//continue
+		}
+		//char, _ := d.GameState.Players[1].GetCharacter()
+
+		l_cancellable := (action == UAIR_LANDING || action == BAIR_LANDING ||
+			action == NAIR_LANDING || action == DAIR_LANDING || action ==
+			FAIR_LANDING)
+
+		//fmt.Printf("%s  %X  %d\n", CharacterNames[char], action, l_cancellable)
+
+		if speed >= 3.0 && l_cancellable {
+			fmt.Println("L-Canceled", action)
+		}
+
 	}
 }

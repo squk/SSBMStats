@@ -20,7 +20,7 @@ const (
 	BUTTON_C    = "C"
 )
 
-type Action int
+type Action uint32
 
 const (
 	DEAD_DOWN              Action = 0x0
