@@ -158,7 +158,6 @@ func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
 		g.MenuState = val
 	} else if state == CHARACTER {
 		g.Players[index].SetCharacter(state, Character(bigEndianInt>>24))
-		fmt.Printf("LIL: %x   BIG: %X\n", littleEndianInt>>24, bigEndianInt>>24)
 	} else if state == ACTION {
 		g.Players[index].SetAction(state, Action(bigEndianInt))
 	} else if StateSliceContains(floatIDs, state) {
