@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,20 +11,34 @@ import (
 	"runtime"
 
 	. "./melee"
-	"github.com/gosuri/uilive"
+	ui "github.com/gizak/termui"
 )
 
 var d Dolphin
-var writer *uilive.Writer
 
 func main() {
-	writer = uilive.New()
-	writer.Start()
+	err := ui.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	initialize()
+
+	ui.Handle("/sys/kbd/q", func(ui.Event) {
+		// press q to quit
+		d.StopLoop()
+		d.GameState.FrameWriter.Close()
+		ui.StopLoop()
+	})
+	ui.Handle("/timer/1s", func(e ui.Event) {
+		d.CUI.Draw()
+	})
+	go ui.Loop()
 
 	run()
 }
 
-func run() {
+func initialize() {
 	d = NewDolphin()
 
 	if d.DolphinPath == "" {
@@ -42,7 +57,6 @@ func run() {
 				exe_name += ".app"
 			}
 			//user_exists, _ := FilepathExists(filepath.Join(text, "User"))
-
 			//exists = user_exists || exists
 			exists, _ = FilepathExists(text)
 
@@ -55,10 +69,12 @@ func run() {
 	}
 
 	if !d.Initialize() {
-		//fmt.Println("Initialization failed")
+		log.Fatalln()
 		return
 	}
+}
 
+func run() {
 	defer (*d.GameState.Socket).Close()
 
 	newFrame := make(chan bool)
@@ -76,17 +92,13 @@ func run() {
 		if err != nil {
 			//continue
 		}
-		//char, _ := d.GameState.Players[1].GetCharacter()
 
 		l_cancellable := (action == UAIR_LANDING || action == BAIR_LANDING ||
 			action == NAIR_LANDING || action == DAIR_LANDING || action ==
 			FAIR_LANDING)
 
-		//fmt.Printf("%s  %X  %d\n", CharacterNames[char], action, l_cancellable)
-
 		if speed >= 3.0 && l_cancellable {
 			fmt.Println("L-Canceled", action)
 		}
-
 	}
 }

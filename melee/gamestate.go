@@ -26,36 +26,35 @@ type DolphinTuple struct {
 }
 
 type GameState struct {
-	DolphinInstance            *Dolphin
-	Frame                      uint32
-	Stage                      Stage
-	MenuState                  MenuState
-	StageCursorX, StageCursorY float32
-	Ready                      bool
-	// Players are indexed 1-8(inclusive). Player 0 is used to store non-player
-	// values. Slightly un-intuitive but it allows for the great MemoryMap and
-	// Player structure designs. Also allows for verbose yet concise printing
-	// of each interface because any player that has not been
-	// played/initialized has a map size of 0.
-	Players [9]Player
+	DolphinInstance *Dolphin
+	FrameWriter     FrameWriter
 
-	MemoryUpdate chan DolphinTuple
+	Players     PlayerContainer
+	FrameNumber uint32
+	Stage       Stage
+	MenuState   MenuState
+	StageCursorX,
+	StageCursorY float32
+	Ready bool
+
 	Socket       *net.UnixConn
-
 	SocketBuffer []byte
+
 	MemoryMap    MemoryMap
+	MemoryUpdate chan DolphinTuple
 	//ActionData   []ActionData
 }
 
 func NewGameState(d *Dolphin) GameState {
 	state := GameState{
 		DolphinInstance: d,
+		FrameWriter:     NewFrameWriter(),
 		Stage:           FINAL_DESTINATION,
 		MenuState:       CHARACTER_SELECT,
-		MemoryUpdate:    make(chan DolphinTuple),
+		SocketBuffer:    make([]byte, 9096),
 		MemoryMap:       GetMemoryMap(),
+		MemoryUpdate:    make(chan DolphinTuple),
 		//ActionData:      GetActionData(),
-		SocketBuffer: make([]byte, 9096),
 	}
 
 	state.BindSocket()
@@ -74,8 +73,7 @@ func (g *GameState) ReadSocket() {
 	for g.DolphinInstance.RUNNING {
 		n, err := (*c).Read(buf[:])
 		if err != nil {
-			// TODO: Log this.
-			panic(err)
+			continue
 		}
 
 		s := strings.Split(string(buf[0:n]), "\n")
@@ -104,6 +102,16 @@ func (g *GameState) BindSocket() {
 	g.Socket = c
 }
 
+func (g *GameState) LogFrame() {
+	pc := g.Players.DeepCopy()
+	//g.DolphinInstance.CUI.LogText(strconv.FormatUint(uint64(time.Now().UnixNano()/int64(time.Millisecond)), 10))
+
+	go func() {
+		frame := NewFrame(pc, g.MenuState, g.Stage)
+		go g.FrameWriter.WriteFrame(frame)
+	}()
+}
+
 func (g *GameState) Update(newFrame chan<- bool) {
 	go g.ReadSocket()
 
@@ -117,6 +125,7 @@ func (g *GameState) Update(newFrame chan<- bool) {
 
 			if g.MemoryMap[m.Address].StateID == FRAME {
 				newFrame <- true
+				g.LogFrame()
 				g.FixFrameIndexing()
 			}
 		}
@@ -146,7 +155,7 @@ func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
 	}
 
 	if state == FRAME {
-		g.Frame = littleEndianInt
+		g.FrameNumber = littleEndianInt
 		//g.Players[index].SetUint(state, littleEndianInt)
 	} else if state == STAGE {
 		val := Stage((littleEndianInt >> 16) & 0x000000ff)

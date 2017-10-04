@@ -5,6 +5,34 @@ import (
 	"sync"
 )
 
+const (
+	STAGE_INFO int = iota
+	PLAYER1
+	PLAYER2
+	PLAYER3
+	PLAYER4
+	PLAYER1_TRANSFORM
+	PLAYER2_TRANSFORM
+	PLAYER3_TRANSFORM
+	PLAYER4_TRANSFORM
+)
+
+// Players are indexed 1-8(inclusive). Player 0 is used to store non-player
+// values. Slightly un-intuitive but it allows for the great MemoryMap and
+// Player structure designs. Also allows for verbose yet concise printing
+// of each interface because any player that has not been
+// played/initialized has a map size of 0.
+type PlayerContainer [9]Player
+
+func (c *PlayerContainer) DeepCopy() PlayerContainer {
+	copy := PlayerContainer{
+		c[0].DeepCopy(), c[1].DeepCopy(), c[2].DeepCopy(), c[3].DeepCopy(),
+		c[4].DeepCopy(), c[5].DeepCopy(), c[6].DeepCopy(), c[7].DeepCopy(),
+		c[8].DeepCopy(),
+	}
+	return copy
+}
+
 type Player struct {
 	Values      map[StateID]interface{}
 	ValuesMutex sync.RWMutex
@@ -16,6 +44,16 @@ func NewPlayer() Player {
 		ValuesMutex: sync.RWMutex{},
 	}
 	return p
+}
+
+func (p *Player) DeepCopy() Player {
+	p.ValuesMutex.RLock()
+	copy := Player{
+		Values:      p.Values,
+		ValuesMutex: p.ValuesMutex,
+	}
+	p.ValuesMutex.RUnlock()
+	return copy
 }
 
 type PlayerState struct {
@@ -83,7 +121,7 @@ func (p *Player) GetUint(state StateID) (uint32, error) {
 		ret = val
 		err = nil
 	} else {
-		ret = 0
+		ret = 0x0
 		err = errors.New("Cannot assert the provided StateID to uint32")
 	}
 	p.ValuesMutex.RUnlock()
@@ -123,4 +161,9 @@ func (p *Player) GetCharacter() (Character, error) {
 	p.ValuesMutex.RUnlock()
 
 	return ret, err
+}
+
+func (p *Player) GetCharacterString() string {
+	c, _ := p.GetCharacter()
+	return CharacterNames[c]
 }
