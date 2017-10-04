@@ -8,6 +8,7 @@ import (
 	"net"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -39,6 +40,7 @@ type GameState struct {
 
 	Socket       *net.UnixConn
 	SocketBuffer []byte
+	SocketMutex  sync.Mutex
 
 	MemoryMap    MemoryMap
 	MemoryUpdate chan DolphinTuple
@@ -52,6 +54,7 @@ func NewGameState(d *Dolphin) GameState {
 		Stage:           FINAL_DESTINATION,
 		MenuState:       CHARACTER_SELECT,
 		SocketBuffer:    make([]byte, 9096),
+		SocketMutex:     sync.Mutex{},
 		MemoryMap:       GetMemoryMap(),
 		MemoryUpdate:    make(chan DolphinTuple),
 		//ActionData:      GetActionData(),
@@ -67,26 +70,32 @@ func NewGameState(d *Dolphin) GameState {
 }
 
 func (g *GameState) ReadSocket() {
+	//func (g *GameState) ReadSocket(read chan bool) {
 	c := g.Socket
 	buf := g.SocketBuffer
 
-	for g.DolphinInstance.RUNNING {
-		n, err := (*c).Read(buf[:])
-		if err != nil {
-			continue
-		}
+	g.SocketMutex.Lock()
+	n, err := (*c).Read(buf[:])
+	g.SocketMutex.Unlock()
 
-		s := strings.Split(string(buf[0:n]), "\n")
-		padded := fmt.Sprintf("%08s", strings.Replace(s[1], "\x00", "", -1))
-		decoded, err := hex.DecodeString(padded)
-
-		if err != nil {
-			//TODO: Implement logging!
-			continue
-		} else {
-			g.MemoryUpdate <- DolphinTuple{s[0], decoded}
-		}
+	if err != nil {
+		c.Close()
+		panic(err)
+		return
 	}
+
+	s := strings.Split(string(buf[0:n]), "\n")
+	padded := fmt.Sprintf("%08s", strings.Replace(s[1], "\x00", "", -1))
+	decoded, err := hex.DecodeString(padded)
+
+	if err != nil {
+		c.Close()
+		panic(err)
+		return
+	} else {
+		g.MemoryUpdate <- DolphinTuple{s[0], decoded}
+	}
+	//read <- true
 }
 
 func (g *GameState) BindSocket() {
@@ -103,39 +112,30 @@ func (g *GameState) BindSocket() {
 }
 
 func (g *GameState) LogFrame() {
-	pc := g.Players.DeepCopy()
-	//g.DolphinInstance.CUI.LogText(strconv.FormatUint(uint64(time.Now().UnixNano()/int64(time.Millisecond)), 10))
+	//pc := g.Players
 
-	go func() {
-		frame := NewFrame(pc, g.MenuState, g.Stage)
-		go g.FrameWriter.WriteFrame(frame)
-	}()
+	//frame := NewFrame(pc, g.MenuState, g.Stage)
+	//g.FrameWriter.WriteFrame(frame)
 }
 
-func (g *GameState) Update(newFrame chan<- bool) {
+func (g *GameState) Update() {
 	go g.ReadSocket()
 
-	go func() {
-		for g.DolphinInstance.RUNNING {
-			m := <-g.MemoryUpdate
+	m := <-g.MemoryUpdate
+	playerIndex := g.MemoryMap[m.Address].PlayerIndex
+	state := g.MemoryMap[m.Address].StateID
 
-			playerIndex := g.MemoryMap[m.Address].PlayerIndex
-			state := g.MemoryMap[m.Address].StateID
-			g.AssignPlayerValues(playerIndex, state, m.Value)
+	g.AssignPlayerValues(playerIndex, state, m.Value)
 
-			if g.MemoryMap[m.Address].StateID == FRAME {
-				newFrame <- true
-				g.LogFrame()
-				g.FixFrameIndexing()
-			}
-		}
-	}()
+	if state == FRAME {
+		go g.LogFrame()
+	}
 }
 
 func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
 	littleEndianInt := binary.LittleEndian.Uint32(value)
 	bigEndianInt := binary.BigEndian.Uint32(value)
-	floatVal := math.Float32frombits(bigEndianInt)
+	floatVal := math.Float32frombits(binary.LittleEndian.Uint32(value))
 
 	floatIDs := []StateID{
 		PERCENT, X, Y, CURSOR_X, CURSOR_Y, ACTION_FRAME, HITLAG_FRAMES_LEFT,
@@ -155,31 +155,28 @@ func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
 	}
 
 	if state == FRAME {
-		g.FrameNumber = littleEndianInt
-		//g.Players[index].SetUint(state, littleEndianInt)
+		g.FrameNumber = bigEndianInt
 	} else if state == STAGE {
 		val := Stage((littleEndianInt >> 16) & 0x000000ff)
-		//g.Players[index].SetStage(state, val)
 		g.Stage = val
 	} else if state == MENU_STATE {
 		val := MenuState(littleEndianInt & 0x000000ff)
-		//g.Players[index].SetMenuState(state, val)
 		g.MenuState = val
 	} else if state == CHARACTER {
 		g.Players[index].SetCharacter(state, Character(bigEndianInt>>24))
 	} else if state == ACTION {
 		g.Players[index].SetAction(state, Action(bigEndianInt))
 	} else if StateSliceContains(floatIDs, state) {
-		g.Players[index].SetFloat(state, floatVal)
+		if state == PERCENT {
+			g.Players[index].SetUint(PERCENT, uint32(value[1]))
+		} else {
+			g.Players[index].SetFloat(state, floatVal)
+		}
 	} else if StateSliceContains(littleEndianIntIDs, state) {
 		g.Players[index].SetUint(state, littleEndianInt)
 	} else if StateSliceContains(bigEndianIntIDs, state) {
 		g.Players[index].SetUint(state, bigEndianInt)
 	}
-}
-
-// normalizes all Player structs ACTION_FRAME to be indexed from 1
-func (g *GameState) FixFrameIndexing() {
 }
 
 func StateSliceContains(s []StateID, f StateID) bool {

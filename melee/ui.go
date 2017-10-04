@@ -10,13 +10,14 @@ import (
 type CUI struct {
 	LogEntries      []string
 	DolphinInstance *Dolphin
+	Draws           uint64
 }
 
 var instance *CUI
 var once sync.Once
 
 func NewCUI() *CUI {
-	return &CUI{[]string{" "}, nil}
+	return &CUI{[]string{" ", " ", " "}, nil, 0}
 }
 
 func (c *CUI) Draw() {
@@ -34,10 +35,10 @@ func (c *CUI) DrawPlayerTable() {
 	for i := 1; i < 5; i++ {
 		character[i-1] = c.DolphinInstance.GameState.Players[i].GetCharacterString()
 		s, _ := c.DolphinInstance.GameState.Players[i].GetUint(STOCK)
-		p, _ := c.DolphinInstance.GameState.Players[i].GetFloat(PERCENT)
+		p, _ := c.DolphinInstance.GameState.Players[i].GetUint(PERCENT)
 
 		stock[i-1] = strconv.FormatUint(uint64(s), 10)
-		percent[i-1] = strconv.FormatFloat(float64(p), 'f', -1, 32)
+		percent[i-1] = strconv.FormatUint(uint64(p), 10)
 		//action[i-1], _ = c.GameState.Players[i].GetAction()
 	}
 
@@ -58,10 +59,12 @@ func (c *CUI) DrawPlayerTable() {
 	table1.FgColor = ui.ColorWhite
 	table1.BgColor = ui.ColorDefault
 	table1.Analysis()
-	table1.SetSize()
 	table1.FgColors[0] = ui.ColorGreen
 	table1.Y = 10
 	table1.X = 0
+	table1.Height = 10
+	table1.Width = 95
+	table1.SetSize()
 
 	ui.Render(table1)
 }
@@ -83,8 +86,8 @@ func (c *CUI) DrawLog() {
 }
 
 func (c *CUI) DrawFrame() {
-	//frame := ui.NewPar(strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10))
 	frame := ui.NewPar(strconv.FormatUint(uint64(c.DolphinInstance.GameState.FrameNumber), 10))
+	c.Draws++
 
 	frame.Height = 6
 	frame.Width = 10

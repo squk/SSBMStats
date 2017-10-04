@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"runtime"
 
@@ -30,9 +30,13 @@ func main() {
 		d.GameState.FrameWriter.Close()
 		ui.StopLoop()
 	})
-	ui.Handle("/timer/1s", func(e ui.Event) {
-		d.CUI.Draw()
-	})
+	go func() {
+		for d.RUNNING {
+			time.Sleep(200 * time.Millisecond)
+
+			d.CUI.Draw()
+		}
+	}()
 	go ui.Loop()
 
 	run()
@@ -70,35 +74,20 @@ func initialize() {
 
 	if !d.Initialize() {
 		log.Fatalln()
-		return
 	}
 }
 
 func run() {
-	defer (*d.GameState.Socket).Close()
+	done := make(chan bool)
 
-	newFrame := make(chan bool)
-
-	for d.RUNNING {
-		d.GameState.Update(newFrame)
-		<-newFrame
-
-		speed, err := d.GameState.Players[1].GetFloat(SPEED_ANIMATION)
-		if err != nil {
-			//continue
+	go func() {
+		for d.RUNNING {
+			d.GameState.Update()
 		}
+		done <- true
+	}()
 
-		action, err := d.GameState.Players[1].GetAction()
-		if err != nil {
-			//continue
-		}
+	<-done
 
-		l_cancellable := (action == UAIR_LANDING || action == BAIR_LANDING ||
-			action == NAIR_LANDING || action == DAIR_LANDING || action ==
-			FAIR_LANDING)
-
-		if speed >= 3.0 && l_cancellable {
-			fmt.Println("L-Canceled", action)
-		}
-	}
+	(*d.GameState.Socket).Close()
 }

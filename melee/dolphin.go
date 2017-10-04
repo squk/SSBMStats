@@ -13,7 +13,7 @@ type Dolphin struct {
 	DolphinPath  string
 	MemoryPath   string
 	PipesPath    string
-	GameState    GameState
+	GameState    *GameState
 	RUNNING      bool
 	CUI          *CUI
 }
@@ -24,6 +24,8 @@ func NewDolphin() Dolphin {
 	d.CUI.DolphinInstance = &d
 
 	d.SetPath("/Users/christian/Desktop/FM/Dolphin.app/Contents/Resources/User")
+	state := NewGameState(&d)
+	d.GameState = &state
 	d.RUNNING = true
 	//d.SetPath("/Users/christian/Library/Application Support/Dolphin")
 
@@ -53,7 +55,6 @@ func (d *Dolphin) Initialize() bool {
 		} else {
 			//fmt.Println("Copied Memory Address list")
 		}
-		d.GameState = NewGameState(d)
 	}
 
 	return true

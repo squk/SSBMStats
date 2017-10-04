@@ -24,36 +24,17 @@ const (
 // played/initialized has a map size of 0.
 type PlayerContainer [9]Player
 
-func (c *PlayerContainer) DeepCopy() PlayerContainer {
-	copy := PlayerContainer{
-		c[0].DeepCopy(), c[1].DeepCopy(), c[2].DeepCopy(), c[3].DeepCopy(),
-		c[4].DeepCopy(), c[5].DeepCopy(), c[6].DeepCopy(), c[7].DeepCopy(),
-		c[8].DeepCopy(),
-	}
-	return copy
-}
-
 type Player struct {
 	Values      map[StateID]interface{}
-	ValuesMutex sync.RWMutex
+	ValuesMutex sync.Mutex
 }
 
 func NewPlayer() Player {
 	p := Player{
 		Values:      make(map[StateID]interface{}),
-		ValuesMutex: sync.RWMutex{},
+		ValuesMutex: sync.Mutex{},
 	}
 	return p
-}
-
-func (p *Player) DeepCopy() Player {
-	p.ValuesMutex.RLock()
-	copy := Player{
-		Values:      p.Values,
-		ValuesMutex: p.ValuesMutex,
-	}
-	p.ValuesMutex.RUnlock()
-	return copy
 }
 
 type PlayerState struct {
@@ -116,7 +97,7 @@ func (p *Player) GetUint(state StateID) (uint32, error) {
 	var ret uint32
 	var err error
 
-	p.ValuesMutex.RLock()
+	p.ValuesMutex.Lock()
 	if val, ok := p.Values[state].(uint32); ok {
 		ret = val
 		err = nil
@@ -124,7 +105,7 @@ func (p *Player) GetUint(state StateID) (uint32, error) {
 		ret = 0x0
 		err = errors.New("Cannot assert the provided StateID to uint32")
 	}
-	p.ValuesMutex.RUnlock()
+	p.ValuesMutex.Unlock()
 
 	return ret, err
 }
@@ -133,7 +114,7 @@ func (p *Player) GetAction() (Action, error) {
 	var ret Action
 	var err error
 
-	p.ValuesMutex.RLock()
+	p.ValuesMutex.Lock()
 	if val, ok := p.Values[ACTION].(Action); ok {
 		ret = val
 		err = nil
@@ -141,7 +122,7 @@ func (p *Player) GetAction() (Action, error) {
 		ret = UNKNOWN_ANIMATION
 		err = errors.New("Cannot assert the interface at the ACTION index to an Action. Invalid assignment?")
 	}
-	p.ValuesMutex.RUnlock()
+	p.ValuesMutex.Unlock()
 
 	return ret, err
 }
@@ -150,7 +131,7 @@ func (p *Player) GetCharacter() (Character, error) {
 	var ret Character
 	var err error
 
-	p.ValuesMutex.RLock()
+	p.ValuesMutex.Lock()
 	if val, ok := p.Values[CHARACTER].(Character); ok {
 		ret = val
 		err = nil
@@ -158,7 +139,7 @@ func (p *Player) GetCharacter() (Character, error) {
 		ret = UNKNOWN_CHARACTER
 		err = errors.New("Cannot assert the interface at the CHARACTER index to a Character. Invalid assignment?")
 	}
-	p.ValuesMutex.RUnlock()
+	p.ValuesMutex.Unlock()
 
 	return ret, err
 }
