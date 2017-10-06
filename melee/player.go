@@ -26,13 +26,13 @@ type PlayerContainer [9]Player
 
 type Player struct {
 	Values      map[StateID]interface{}
-	ValuesMutex sync.Mutex
+	valuesMutex sync.Mutex
 }
 
 func NewPlayer() Player {
 	p := Player{
 		Values:      make(map[StateID]interface{}),
-		ValuesMutex: sync.Mutex{},
+		valuesMutex: sync.Mutex{},
 	}
 	return p
 }
@@ -44,43 +44,40 @@ type PlayerState struct {
 
 // Setters. Used for R/W locking
 func (p *Player) SetFloat(state StateID, val float32) {
-	p.ValuesMutex.Lock()
+	p.valuesMutex.Lock()
 	p.Values[state] = val
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 }
 func (p *Player) SetUint(state StateID, val uint32) {
-	p.ValuesMutex.Lock()
+	p.valuesMutex.Lock()
 	p.Values[state] = val
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 }
 func (p *Player) SetStage(state StateID, val Stage) {
-	p.ValuesMutex.Lock()
+	p.valuesMutex.Lock()
 	p.Values[state] = Stage(val)
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 }
 
 func (p *Player) SetMenuState(state StateID, val MenuState) {
-	p.ValuesMutex.Lock()
+	p.valuesMutex.Lock()
 	p.Values[state] = MenuState(val)
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 }
 func (p *Player) SetCharacter(state StateID, val Character) {
-	p.ValuesMutex.Lock()
+	p.valuesMutex.Lock()
 	p.Values[state] = Character(val)
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 }
 func (p *Player) SetAction(state StateID, val Action) {
-	p.ValuesMutex.Lock()
+	p.valuesMutex.Lock()
 	p.Values[state] = Action(val)
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 }
 
 // Getters
-func (p *Player) GetFloat(state StateID) (float32, error) {
-	var ret float32
-	var err error
-
-	p.ValuesMutex.Lock()
+func (p *Player) GetFloat(state StateID) (ret float32, err error) {
+	p.valuesMutex.Lock()
 	if val, ok := p.Values[state].(float32); ok {
 		ret = val
 		err = nil
@@ -88,16 +85,13 @@ func (p *Player) GetFloat(state StateID) (float32, error) {
 		ret = 0.0
 		err = errors.New("Cannot assert the provided StateID to float32")
 	}
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 
-	return ret, err
+	return
 }
 
-func (p *Player) GetUint(state StateID) (uint32, error) {
-	var ret uint32
-	var err error
-
-	p.ValuesMutex.Lock()
+func (p *Player) GetUint(state StateID) (ret uint32, err error) {
+	p.valuesMutex.Lock()
 	if val, ok := p.Values[state].(uint32); ok {
 		ret = val
 		err = nil
@@ -105,16 +99,13 @@ func (p *Player) GetUint(state StateID) (uint32, error) {
 		ret = 0x0
 		err = errors.New("Cannot assert the provided StateID to uint32")
 	}
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 
-	return ret, err
+	return
 }
 
-func (p *Player) GetAction() (Action, error) {
-	var ret Action
-	var err error
-
-	p.ValuesMutex.Lock()
+func (p *Player) GetAction() (ret Action, err error) {
+	p.valuesMutex.Lock()
 	if val, ok := p.Values[ACTION].(Action); ok {
 		ret = val
 		err = nil
@@ -122,16 +113,13 @@ func (p *Player) GetAction() (Action, error) {
 		ret = UNKNOWN_ANIMATION
 		err = errors.New("Cannot assert the interface at the ACTION index to an Action. Invalid assignment?")
 	}
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 
-	return ret, err
+	return
 }
 
-func (p *Player) GetCharacter() (Character, error) {
-	var ret Character
-	var err error
-
-	p.ValuesMutex.Lock()
+func (p *Player) GetCharacter() (ret Character, err error) {
+	p.valuesMutex.Lock()
 	if val, ok := p.Values[CHARACTER].(Character); ok {
 		ret = val
 		err = nil
@@ -139,9 +127,9 @@ func (p *Player) GetCharacter() (Character, error) {
 		ret = UNKNOWN_CHARACTER
 		err = errors.New("Cannot assert the interface at the CHARACTER index to a Character. Invalid assignment?")
 	}
-	p.ValuesMutex.Unlock()
+	p.valuesMutex.Unlock()
 
-	return ret, err
+	return
 }
 
 func (p *Player) GetCharacterString() string {
