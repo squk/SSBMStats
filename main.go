@@ -17,7 +17,14 @@ import (
 var d Dolphin
 
 func main() {
-	err := ui.Init()
+	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	log.SetFlags(log.Lshortfile)
+	log.SetOutput(f)
+
+	err = ui.Init()
 	if err != nil {
 		panic(err)
 	}
@@ -28,6 +35,7 @@ func main() {
 		// press q to quit
 		d.StopLoop()
 		d.GameState.FrameWriter.Close()
+		f.Close()
 		ui.StopLoop()
 	})
 	go func() {
