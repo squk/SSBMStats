@@ -12,15 +12,6 @@ import (
 	"syscall"
 )
 
-type MenuState int
-
-const (
-	CHARACTER_SELECT MenuState = 0
-	STAGE_SELECT               = 1
-	IN_GAME                    = 2
-	POSTGAME_SCORES            = 4
-)
-
 type DolphinTuple struct {
 	Address string
 	Value   []byte
@@ -28,7 +19,7 @@ type DolphinTuple struct {
 
 type GameState struct {
 	DolphinInstance *Dolphin
-	FrameWriter     FrameWriter
+	FrameWriter     *FrameWriter
 
 	Players     PlayerContainer
 	FrameNumber uint32
@@ -50,15 +41,16 @@ type GameState struct {
 func NewGameState(d *Dolphin) GameState {
 	state := GameState{
 		DolphinInstance: d,
-		FrameWriter:     NewFrameWriter(),
 		Stage:           FINAL_DESTINATION,
-		MenuState:       CHARACTER_SELECT,
+		MenuState:       IN_GAME,
 		SocketBuffer:    make([]byte, 9096),
 		SocketMutex:     sync.Mutex{},
 		MemoryMap:       GetMemoryMap(),
 		MemoryUpdate:    make(chan DolphinTuple),
 		//ActionData:      GetActionData(),
 	}
+	fw := NewFrameWriter()
+	state.FrameWriter = &fw
 
 	state.BindSocket()
 
@@ -112,10 +104,9 @@ func (g *GameState) BindSocket() {
 }
 
 func (g *GameState) LogFrame() {
-	//pc := g.Players
-
-	//frame := NewFrame(pc, g.MenuState, g.Stage)
-	//g.FrameWriter.WriteFrame(frame)
+	pc := g.Players
+	frame := NewFrame(pc, g.MenuState, g.Stage)
+	go g.FrameWriter.LogFrame(frame)
 }
 
 func (g *GameState) Update() {
@@ -128,14 +119,14 @@ func (g *GameState) Update() {
 	g.AssignPlayerValues(playerIndex, state, m.Value)
 
 	if state == FRAME {
-		go g.LogFrame()
+		g.LogFrame()
 	}
 }
 
 func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
 	littleEndianInt := binary.LittleEndian.Uint32(value)
 	bigEndianInt := binary.BigEndian.Uint32(value)
-	floatVal := math.Float32frombits(binary.LittleEndian.Uint32(value))
+	floatVal := math.Float32frombits(binary.BigEndian.Uint32(value))
 
 	floatIDs := []StateID{
 		PERCENT, X, Y, CURSOR_X, CURSOR_Y, ACTION_FRAME, HITLAG_FRAMES_LEFT,
@@ -157,15 +148,20 @@ func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
 	if state == FRAME {
 		g.FrameNumber = bigEndianInt
 	} else if state == STAGE {
-		val := Stage((littleEndianInt >> 16) & 0x000000ff)
+		val := Stage((littleEndianInt >> 8) & 0xFF)
 		g.Stage = val
 	} else if state == MENU_STATE {
-		val := MenuState(littleEndianInt & 0x000000ff)
+		val := MenuState(bigEndianInt & 0xFF)
 		g.MenuState = val
+	} else if state == STOCK {
+		if index > 0 && index <= 4 {
+			g.Players[index].SetUint(STOCK, littleEndianInt)
+		}
 	} else if state == CHARACTER {
 		g.Players[index].SetCharacter(state, Character(bigEndianInt>>24))
 	} else if state == ACTION {
 		g.Players[index].SetAction(state, Action(bigEndianInt))
+		//log.Printf("0x%08X  0x%08X\n", bigEndianInt, littleEndianInt)
 	} else if StateSliceContains(floatIDs, state) {
 		if state == PERCENT {
 			g.Players[index].SetUint(PERCENT, uint32(value[1]))
