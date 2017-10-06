@@ -3,28 +3,17 @@ package melee
 import (
 	"bufio"
 	"encoding/json"
+	"log"
 	"os"
 	"sync"
 )
 
-type Frame struct {
-	MenuState MenuState
-	Stage     Stage
-	Players   []Player
-}
-
-func NewFrame(players PlayerContainer, m MenuState, s Stage) Frame {
-	f := Frame{
-		m, s, players[PLAYER1 : PLAYER4+1],
-	}
-	return f
-}
-
 type FrameWriter struct {
-	StatsFile *os.File
-	Writer    *bufio.Writer
-	Encoder   *json.Encoder
-	Mutex     sync.Mutex
+	StatsFile   *os.File
+	Writer      *bufio.Writer
+	Encoder     *json.Encoder
+	Mutex       sync.Mutex
+	FrameBuffer *FrameBuffer
 }
 
 const JSON_DIR = "./statistics.json"
@@ -37,16 +26,23 @@ func NewFrameWriter() FrameWriter {
 
 	w := bufio.NewWriter(f)
 	enc := json.NewEncoder(w)
-	fw := FrameWriter{f, w, enc, sync.Mutex{}}
+	fb := NewFrameBuffer()
+
+	fw := FrameWriter{f, w, enc, sync.Mutex{}, &fb}
 
 	return fw
 }
 
-func (fw *FrameWriter) WriteFrame(f Frame) {
-	if f.MenuState == IN_GAME {
+func (fw *FrameWriter) LogFrame(f Frame) {
+	fw.FrameBuffer.Insert(f)
+	fw.Write(f)
+}
+
+func (fw *FrameWriter) Write(f Frame) {
+	if fw.ValidateWrite() {
 		err := fw.Encoder.Encode(f)
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 
 		fw.Writer.Flush()
@@ -56,4 +52,19 @@ func (fw *FrameWriter) WriteFrame(f Frame) {
 func (fw *FrameWriter) Close() {
 	fw.Writer.Flush()
 	fw.StatsFile.Close()
+}
+
+func (fw *FrameWriter) ValidateWrite() bool {
+	validator := NewFrameValidator(fw.FrameBuffer)
+	current_frame, exists := fw.FrameBuffer.GetCurrent()
+
+	if exists {
+		if current_frame.MenuState == IN_GAME {
+			if validator.AnyPassed() {
+				return true
+			}
+		}
+	}
+
+	return false
 }
