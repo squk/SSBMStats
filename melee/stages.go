@@ -1,6 +1,6 @@
 package melee
 
-type Stage int
+type Stage byte
 
 const (
 	NO_STAGE           Stage = 0
@@ -12,6 +12,29 @@ const (
 	YOSHIS_STORY             = 0x6
 	RANDOM_STAGE             = 0x1D
 )
+
+func GetStageName(stage Stage) string {
+	switch stage {
+	case NO_STAGE:
+		return "NO_STAGE"
+	case FINAL_DESTINATION:
+		return "FINAL_DESTINATION"
+	case BATTLEFIELD:
+		return "BATTLEFIELD"
+	case POKEMON_STADIUM:
+		return "POKEMON_STADIUM"
+	case DREAMLAND:
+		return "DREAMLAND"
+	case FOUNTAIN_OF_DREAMS:
+		return "FOUNTAIN_OF_DREAMS"
+	case YOSHIS_STORY:
+		return "YOSHIS_STORY"
+	case RANDOM_STAGE:
+		return "RANDOM_STAGE"
+	default:
+		return ""
+	}
+}
 
 // Get the X coordinate of the edge of the stage, approaching from
 // off_stage
