@@ -6,54 +6,19 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"runtime"
 
-	. "./melee"
-	ui "github.com/gizak/termui"
+	melee "./melee"
 )
 
-var d Dolphin
-
 func main() {
-	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetFlags(log.Lshortfile)
-	log.SetOutput(f)
-
-	err = ui.Init()
-	if err != nil {
-		panic(err)
-	}
-
 	initialize()
-
-	ui.Handle("/sys/kbd/q", func(ui.Event) {
-		// press q to quit
-		d.StopLoop()
-		d.GameState.FrameWriter.Close()
-		f.Close()
-		ui.StopLoop()
-	})
-	go func() {
-		for d.RUNNING {
-			time.Sleep(200 * time.Millisecond)
-
-			d.CUI.Draw()
-		}
-	}()
-	go ui.Loop()
-
 	run()
 }
 
 func initialize() {
-	d = NewDolphin()
-
-	if d.DolphinPath == "" {
+	if melee.Dolphin.DolphinPath == "" {
 		exists := false
 
 		for !exists {
@@ -70,32 +35,27 @@ func initialize() {
 			}
 			//user_exists, _ := FilepathExists(filepath.Join(text, "User"))
 			//exists = user_exists || exists
-			exists, _ = FilepathExists(text)
+			exists, _ = melee.FilepathExists(text)
 
 			if !exists {
 				//fmt.Println("\nInvalid Dolphin path")
 			}
 			finalPath := filepath.Join(text, "User")
-			d.SetPath(finalPath)
+			melee.Dolphin.SetPath(finalPath)
 		}
 	}
 
-	if !d.Initialize() {
+	err := melee.Init()
+	if err != nil {
 		log.Fatalln()
 	}
 }
 
 func run() {
 	done := make(chan bool)
-
-	go func() {
-		for d.RUNNING {
-			d.GameState.Update()
-		}
-		done <- true
-	}()
+	melee.GameState.Update()
 
 	<-done
 
-	(*d.GameState.Socket).Close()
+	(*melee.GameState.Socket).Close()
 }

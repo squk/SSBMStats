@@ -3,7 +3,6 @@ package melee
 import (
 	"bufio"
 	"encoding/json"
-	"log"
 	"os"
 	"sync"
 )
@@ -18,7 +17,7 @@ type FrameWriter struct {
 
 const JSON_DIR = "./statistics.json"
 
-func NewFrameWriter() FrameWriter {
+func NewFrameWriter() *FrameWriter {
 	f, err := os.OpenFile(JSON_DIR, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		panic(err)
@@ -30,7 +29,7 @@ func NewFrameWriter() FrameWriter {
 
 	fw := FrameWriter{f, w, enc, sync.Mutex{}, &fb}
 
-	return fw
+	return &fw
 }
 
 func (fw *FrameWriter) LogFrame(f Frame) {
@@ -40,12 +39,6 @@ func (fw *FrameWriter) LogFrame(f Frame) {
 
 func (fw *FrameWriter) Write(f Frame) {
 	if fw.ValidateWrite() {
-		err := fw.Encoder.Encode(f)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		fw.Writer.Flush()
 	}
 }
 

@@ -17,10 +17,7 @@ type DolphinTuple struct {
 	Value   []byte
 }
 
-type GameState struct {
-	DolphinInstance *Dolphin
-	FrameWriter     *FrameWriter
-
+type GameStateManager struct {
 	Players     PlayerContainer
 	FrameNumber uint32
 	Stage       Stage
@@ -38,19 +35,16 @@ type GameState struct {
 	//ActionData   []ActionData
 }
 
-func NewGameState(d *Dolphin) GameState {
-	state := GameState{
-		DolphinInstance: d,
-		Stage:           FINAL_DESTINATION,
-		MenuState:       IN_GAME,
-		SocketBuffer:    make([]byte, 9096),
-		SocketMutex:     sync.Mutex{},
-		MemoryMap:       GetMemoryMap(),
-		MemoryUpdate:    make(chan DolphinTuple),
+func NewGameStateManager() *GameStateManager {
+	state := GameStateManager{
+		Stage:        FINAL_DESTINATION,
+		MenuState:    IN_GAME,
+		SocketBuffer: make([]byte, 9096),
+		SocketMutex:  sync.Mutex{},
+		MemoryMap:    GetMemoryMap(),
+		MemoryUpdate: make(chan DolphinTuple),
 		//ActionData:      GetActionData(),
 	}
-	fw := NewFrameWriter()
-	state.FrameWriter = &fw
 
 	state.BindSocket()
 
@@ -58,11 +52,10 @@ func NewGameState(d *Dolphin) GameState {
 		state.Players[i] = NewPlayer()
 	}
 
-	return state
+	return &state
 }
 
-func (g *GameState) ReadSocket() {
-	//func (g *GameState) ReadSocket(read chan bool) {
+func (g *GameStateManager) ReadSocket() {
 	c := g.Socket
 	buf := g.SocketBuffer
 
@@ -87,11 +80,10 @@ func (g *GameState) ReadSocket() {
 	} else {
 		g.MemoryUpdate <- DolphinTuple{s[0], decoded}
 	}
-	//read <- true
 }
 
-func (g *GameState) BindSocket() {
-	p := filepath.Join(g.DolphinInstance.MemoryPath, "MemoryWatcher")
+func (g *GameStateManager) BindSocket() {
+	p := filepath.Join(Dolphin.MemoryPath, "MemoryWatcher")
 
 	syscall.Unlink(p)
 	c, err := net.ListenUnixgram("unixgram", &net.UnixAddr{p, "unixgram"})
@@ -103,13 +95,13 @@ func (g *GameState) BindSocket() {
 	g.Socket = c
 }
 
-func (g *GameState) LogFrame() {
+func (g *GameStateManager) LogFrame() {
 	pc := g.Players
 	frame := NewFrame(pc, g.MenuState, g.Stage)
-	go g.FrameWriter.LogFrame(frame)
+	go FWriter.LogFrame(frame)
 }
 
-func (g *GameState) Update() {
+func (g *GameStateManager) Update() {
 	go g.ReadSocket()
 
 	m := <-g.MemoryUpdate
@@ -121,9 +113,13 @@ func (g *GameState) Update() {
 	if state == FRAME {
 		g.LogFrame()
 	}
+
+	if Dolphin.RUNNING {
+		g.Update()
+	}
 }
 
-func (g *GameState) AssignPlayerValues(index int, state StateID, value []byte) {
+func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []byte) {
 	littleEndianInt := binary.LittleEndian.Uint32(value)
 	bigEndianInt := binary.BigEndian.Uint32(value)
 	floatVal := math.Float32frombits(binary.BigEndian.Uint32(value))

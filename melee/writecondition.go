@@ -1,7 +1,5 @@
 package melee
 
-import "log"
-
 type WriteFlag byte
 
 const (
@@ -62,9 +60,6 @@ func (fv *FrameValidator) AnyPassed() bool {
 	return false
 }
 
-// A FALSE value from here does not necessarily indicate that the player has
-// missed an L-cancel. It only means that their current action can be
-// L-cancelled and they have yet to do so.
 func L_CANCEL_PASS(f Frame) WriteFlag {
 	if !f.Empty() {
 		action, _ := f.Players[1].GetAction()
@@ -72,8 +67,6 @@ func L_CANCEL_PASS(f Frame) WriteFlag {
 		char, _ := f.Players[1].GetCharacter()
 
 		if CAN_L_CANCEL(action) {
-			//log.Printf("%s: %v \n", f.Players[1].GetCharacterString(), animation_speed)
-
 			animation := 0
 
 			if action == BAIR_LANDING {
@@ -91,10 +84,8 @@ func L_CANCEL_PASS(f Frame) WriteFlag {
 			l_speed := (LANDING_SPEEDS[char][animation] * 2.0) - CANCEL_TOLERANCE
 
 			if animation_speed >= l_speed {
-				log.Println("L_CANCEL_PASSSSSSSS")
 				return TRUE
 			} else {
-				log.Println("L_CANCEL_FAIL")
 				return FALSE
 			}
 		}

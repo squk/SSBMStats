@@ -7,21 +7,19 @@ import (
 	ui "github.com/gizak/termui"
 )
 
-type CUI struct {
+type ConsoleUI struct {
 	LogEntries         []string
-	DolphinInstance    *Dolphin
 	Draws              uint64
 	CurrentX, CurrentY int
 }
 
-var instance *CUI
 var once sync.Once
 
-func NewCUI() *CUI {
-	return &CUI{[]string{" ", " ", " "}, nil, 0, 0, 0}
+func NewConsoleUI() *ConsoleUI {
+	return &ConsoleUI{[]string{" ", " ", " "}, 0, 0, 0}
 }
 
-func (c *CUI) Draw() {
+func (c *ConsoleUI) Draw() {
 	c.DrawLog()
 
 	c.Draws++
@@ -29,11 +27,11 @@ func (c *CUI) Draw() {
 	c.CurrentY = 0
 }
 
-func (c *CUI) AdjustX(x int) {
+func (c *ConsoleUI) AdjustX(x int) {
 	c.CurrentX += x
 }
 
-func (c *CUI) AdjustY(y int) {
+func (c *ConsoleUI) AdjustY(y int) {
 	c.CurrentY += y
 }
 
@@ -42,7 +40,7 @@ var character = make([]string, 4)
 var LOG_W = 50
 var LOG_H = 6
 
-func (c *CUI) DrawLog() {
+func (c *ConsoleUI) DrawLog() {
 	var logText string
 	for i := len(c.LogEntries) - 1; i >= 0; i-- {
 		logText += c.LogEntries[i] + "\n"
@@ -65,8 +63,8 @@ func (c *CUI) DrawLog() {
 var FRAME_W int = 9
 var FRAME_H int = 3
 
-func (c *CUI) DrawFrame() {
-	frame := ui.NewPar(strconv.FormatUint(uint64(c.DolphinInstance.GameState.FrameNumber), 10))
+func (c *ConsoleUI) DrawFrame() {
+	frame := ui.NewPar(strconv.FormatUint(uint64(GameState.FrameNumber), 10))
 
 	frame.X = 0
 	frame.Y = c.CurrentY
@@ -87,8 +85,8 @@ func (c *CUI) DrawFrame() {
 var STAGE_W int = 21
 var STAGE_H int = 3
 
-func (c *CUI) DrawStage() {
-	stage := ui.NewPar(GetStageName(c.DolphinInstance.GameState.Stage))
+func (c *ConsoleUI) DrawStage() {
+	stage := ui.NewPar(GetStageName(GameState.Stage))
 
 	stage.X = FRAME_W
 	c.AdjustY(-1 * FRAME_H) // want at same Y position as Frame window
@@ -110,8 +108,8 @@ func (c *CUI) DrawStage() {
 var MENU_STATE_W int = 20
 var MENU_STATE_H int = 3
 
-func (c *CUI) DrawMenuState() {
-	menustate := ui.NewPar(GetMenuStateName(c.DolphinInstance.GameState.MenuState))
+func (c *ConsoleUI) DrawMenuState() {
+	menustate := ui.NewPar(GetMenuStateName(GameState.MenuState))
 
 	menustate.X = FRAME_W + STAGE_W
 	c.AdjustY(-1 * STAGE_H) // want at same Y position as Stage window
@@ -133,7 +131,7 @@ func (c *CUI) DrawMenuState() {
 var PLAYER_TABLE_W int = 95
 var PLAYER_TABLE_H int = 10
 
-func (c *CUI) DrawPlayerTable() {
+func (c *ConsoleUI) DrawPlayerTable() {
 	c.InsertLineBreaks(2)
 
 	percent := make([]string, 4)
@@ -141,16 +139,16 @@ func (c *CUI) DrawPlayerTable() {
 	//action := make([]Action, 4)
 
 	for i := 1; i < 5; i++ {
-		char, _ := c.DolphinInstance.GameState.Players[i].GetCharacter()
+		char, _ := GameState.Players[i].GetCharacter()
 		if char != 0xFF {
-			character[i-1] = c.DolphinInstance.GameState.Players[i].GetCharacterString()
+			character[i-1] = GameState.Players[i].GetCharacterString()
 		}
-		s, _ := c.DolphinInstance.GameState.Players[i].GetUint(STOCK)
-		p, _ := c.DolphinInstance.GameState.Players[i].GetUint(PERCENT)
+		s, _ := GameState.Players[i].GetUint(STOCK)
+		p, _ := GameState.Players[i].GetUint(PERCENT)
 
 		stock[i-1] = strconv.FormatUint(uint64(s), 10)
 		percent[i-1] = strconv.FormatUint(uint64(p), 10)
-		//action[i-1], _ = c.GameState.Players[i].GetAction()
+		//action[i-1], _ = GameState.Players[i].GetAction()
 	}
 
 	rows1 := [][]string{
@@ -186,14 +184,14 @@ func (c *CUI) DrawPlayerTable() {
 	ui.Render(table1)
 }
 
-func (c *CUI) LogText(str string) {
+func (c *ConsoleUI) LogText(str string) {
 	c.LogEntries = append(c.LogEntries, str)
 }
 
-func (c *CUI) ClearLog() {
+func (c *ConsoleUI) ClearLog() {
 	c.LogEntries = make([]string, 10)
 }
 
-func (c *CUI) InsertLineBreaks(size int) {
+func (c *ConsoleUI) InsertLineBreaks(size int) {
 	c.AdjustY(size)
 }

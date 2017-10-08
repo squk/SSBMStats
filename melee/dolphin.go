@@ -3,64 +3,55 @@ package melee
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
 
-type Dolphin struct {
+type DolphinManager struct {
 	SelfPort     int
 	OpponentPort int
 	DolphinPath  string
 	MemoryPath   string
 	PipesPath    string
-	GameState    *GameState
 	RUNNING      bool
-	CUI          *CUI
 }
 
-func NewDolphin() Dolphin {
-	d := Dolphin{}
-	d.CUI = NewCUI()
-	d.CUI.DolphinInstance = &d
-
-	d.SetPath("/Users/christian/Desktop/FM/Dolphin.app/Contents/Resources/User")
-	state := NewGameState(&d)
-	d.GameState = &state
+func NewDolphinManager() *DolphinManager {
+	d := DolphinManager{}
+	d.SetPath("/Users/christian/Desktop/FM/DolphinManager.app/Contents/Resources/User")
 	d.RUNNING = true
-	//d.SetPath("/Users/christian/Library/Application Support/Dolphin")
 
 	if d.MemoryPath != "" {
 		_ = os.Mkdir(d.MemoryPath, os.ModePerm)
-		//fmt.Println("Created MemoryWatcher path")
+		log.Println("Created MemoryWatcher path")
 	}
 	if d.PipesPath != "" {
 		_ = os.Mkdir(d.PipesPath, os.ModePerm)
-		//fmt.Println("Created Pipes path")
+		log.Println("Created Pipes path")
 	}
 
-	return d
+	return &d
 }
 
-func (d *Dolphin) StopLoop() {
+func (d *DolphinManager) StopLoop() {
 	d.RUNNING = false
 }
 
-func (d *Dolphin) Initialize() bool {
+func (d *DolphinManager) Init() bool {
 	if d.DolphinPath == "" || d.MemoryPath == "" || d.PipesPath == "" {
 		return false
 	} else {
 		err := CopyFile("Locations.txt", filepath.Join(d.MemoryPath, "Locations.txt"))
 		if err != nil {
 			fmt.Println(err)
-		} else {
-			//fmt.Println("Copied Memory Address list")
 		}
 	}
 
 	return true
 }
 
-func (d *Dolphin) SetPath(path string) bool {
+func (d *DolphinManager) SetPath(path string) bool {
 	ex, _ := FilepathExists(path)
 
 	if ex {
