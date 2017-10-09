@@ -27,8 +27,6 @@ func init() {
 	GameState = NewGameStateManager()
 	FWriter = NewFrameWriter()
 
-	log.Println(Dolphin.DolphinPath)
-
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
 		// press q to quit
 		(*GameState.Socket).Close()
