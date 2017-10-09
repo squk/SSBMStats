@@ -14,13 +14,12 @@ type BufferCondition func(fs *FrameBuffer) WriteFlag
 // checks for a condition only requiring a single frame
 type FrameCondition func(f Frame) WriteFlag
 
-// TODO: Make the player index that we check dynamic. Right now we assume the
-// player is P1
 type FrameValidator struct {
 	FrameBuffer *FrameBuffer
 
-	FrameConditions  map[string]FrameCondition
-	BufferConditions map[string]BufferCondition
+	FrameConditions    map[string]FrameCondition
+	BufferConditions   map[string]BufferCondition
+	L_CANCEL_OPPORTUNE bool // prevents multiple frames being marked as a successful L-Cancel
 }
 
 func NewFrameValidator(fb *FrameBuffer) FrameValidator {
@@ -60,33 +59,41 @@ func (fv *FrameValidator) AnyPassed() bool {
 	return false
 }
 
-func L_CANCEL_PASS(f Frame) WriteFlag {
+func (fv *FrameValidator) L_CANCEL_PASS(f Frame) WriteFlag {
 	if !f.Empty() {
-		action, _ := f.Players[1].GetAction()
-		animation_speed, _ := f.Players[1].GetFloat(SPEED_ANIMATION)
-		char, _ := f.Players[1].GetCharacter()
+		action, _ := f.Players[Dolphin.SelfPath].GetAction()
 
-		if CAN_L_CANCEL(action) {
-			animation := 0
+		if !fv.L_CANCEL_OPPORTUNE {
+			animation_speed, _ := f.Players[Dolphin.SelfPath].GetFloat(SPEED_ANIMATION)
+			char, _ := f.Players[Dolphin.SelfPath].GetCharacter()
 
-			if action == BAIR_LANDING {
-				animation = BAIR_SPEED
-			} else if action == DAIR_LANDING {
-				animation = DAIR_SPEED
-			} else if action == FAIR_LANDING {
-				animation = FAIR_SPEED
-			} else if action == NAIR_LANDING {
-				animation = NAIR_SPEED
-			} else if action == UAIR_LANDING {
-				animation = UAIR_SPEED
+			if CAN_L_CANCEL(action) {
+				fv.L_CANCEL_OPPORTUNE = true
+				animation := 0
+
+				if action == BAIR_LANDING {
+					animation = BAIR_SPEED
+				} else if action == DAIR_LANDING {
+					animation = DAIR_SPEED
+				} else if action == FAIR_LANDING {
+					animation = FAIR_SPEED
+				} else if action == NAIR_LANDING {
+					animation = NAIR_SPEED
+				} else if action == UAIR_LANDING {
+					animation = UAIR_SPEED
+				}
+
+				l_speed := (LANDING_SPEEDS[char][animation] * 2.0) - CANCEL_TOLERANCE
+
+				if animation_speed >= l_speed {
+					return TRUE
+				} else {
+					return FALSE
+				}
 			}
-
-			l_speed := (LANDING_SPEEDS[char][animation] * 2.0) - CANCEL_TOLERANCE
-
-			if animation_speed >= l_speed {
-				return TRUE
-			} else {
-				return FALSE
+		} else {
+			if !CAN_L_CANCEL(action) {
+				fv.L_CANCEL_OPPORTUNE = false
 			}
 		}
 	}

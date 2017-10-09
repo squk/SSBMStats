@@ -2,7 +2,7 @@ package melee
 
 import (
 	"strconv"
-	"sync"
+	"strings"
 
 	ui "github.com/gizak/termui"
 )
@@ -13,14 +13,17 @@ type ConsoleUI struct {
 	CurrentX, CurrentY int
 }
 
-var once sync.Once
-
 func NewConsoleUI() *ConsoleUI {
+	err := ui.Init()
+	if err != nil {
+		panic(err)
+	}
+
 	return &ConsoleUI{[]string{" ", " ", " "}, 0, 0, 0}
 }
 
 func (c *ConsoleUI) Draw() {
-	c.DrawLog()
+	c.DrawFrame()
 
 	c.Draws++
 	c.CurrentX = 0
@@ -37,29 +40,6 @@ func (c *ConsoleUI) AdjustY(y int) {
 
 var character = make([]string, 4)
 
-var LOG_W = 50
-var LOG_H = 6
-
-func (c *ConsoleUI) DrawLog() {
-	var logText string
-	for i := len(c.LogEntries) - 1; i >= 0; i-- {
-		logText += c.LogEntries[i] + "\n"
-	}
-
-	log := ui.NewPar(logText)
-	log.Height = LOG_H
-	c.AdjustY(LOG_H)
-
-	log.Width = LOG_W
-	log.TextFgColor = ui.ColorWhite
-	log.BorderLabel = "Log"
-	log.BorderFg = ui.ColorRed
-	log.BorderLabelFg = ui.ColorCyan
-
-	ui.Render(log)
-	c.DrawFrame()
-}
-
 var FRAME_W int = 9
 var FRAME_H int = 3
 
@@ -72,9 +52,10 @@ func (c *ConsoleUI) DrawFrame() {
 	frame.Height = FRAME_H
 	c.AdjustY(FRAME_H)
 	frame.Width = FRAME_W
+	c.AdjustX(FRAME_W)
 
 	frame.TextFgColor = ui.ColorWhite
-	frame.BorderLabel = "Frame"
+	frame.BorderLabel = "FRAME"
 	frame.BorderFg = ui.ColorRed
 	frame.BorderLabelFg = ui.ColorCyan
 	ui.Render(frame)
@@ -82,22 +63,23 @@ func (c *ConsoleUI) DrawFrame() {
 	c.DrawStage()
 }
 
-var STAGE_W int = 21
+var STAGE_W int = 26
 var STAGE_H int = 3
 
 func (c *ConsoleUI) DrawStage() {
 	stage := ui.NewPar(GetStageName(GameState.Stage))
 
-	stage.X = FRAME_W
+	stage.X = c.CurrentX
 	c.AdjustY(-1 * FRAME_H) // want at same Y position as Frame window
 	stage.Y = c.CurrentY
 
 	stage.Width = STAGE_W
+	c.AdjustX(STAGE_W)
 	stage.Height = STAGE_H
 	c.AdjustY(STAGE_H)
 
 	stage.TextFgColor = ui.ColorWhite
-	stage.BorderLabel = "Stage"
+	stage.BorderLabel = "STAGE"
 	stage.BorderFg = ui.ColorRed
 	stage.BorderLabelFg = ui.ColorCyan
 	ui.Render(stage)
@@ -111,16 +93,17 @@ var MENU_STATE_H int = 3
 func (c *ConsoleUI) DrawMenuState() {
 	menustate := ui.NewPar(GetMenuStateName(GameState.MenuState))
 
-	menustate.X = FRAME_W + STAGE_W
+	menustate.X = c.CurrentX
 	c.AdjustY(-1 * STAGE_H) // want at same Y position as Stage window
 	menustate.Y = c.CurrentY
 
 	menustate.Width = MENU_STATE_W
+	c.AdjustX(MENU_STATE_W)
 	menustate.Height = MENU_STATE_H
 	c.AdjustY(MENU_STATE_H)
 
 	menustate.TextFgColor = ui.ColorWhite
-	menustate.BorderLabel = "Menu State"
+	menustate.BorderLabel = "MENU STATE"
 	menustate.BorderFg = ui.ColorRed
 	menustate.BorderLabelFg = ui.ColorCyan
 	ui.Render(menustate)
@@ -132,8 +115,7 @@ var PLAYER_TABLE_W int = 95
 var PLAYER_TABLE_H int = 10
 
 func (c *ConsoleUI) DrawPlayerTable() {
-	c.InsertLineBreaks(2)
-
+	c.CurrentX = 0
 	percent := make([]string, 4)
 	stock := make([]string, 4)
 	//action := make([]Action, 4)
@@ -153,11 +135,12 @@ func (c *ConsoleUI) DrawPlayerTable() {
 
 	rows1 := [][]string{
 		[]string{" ", "Player 1", "Player 2", "Player 3", "Player 4"},
-		[]string{"Character"},
-		[]string{"Stocks"},
-		[]string{"Percent"},
+		[]string{"[Character](fg-green)"},
+		[]string{"[Stocks](fg-green)"},
+		[]string{"[Percent](fg-green)"},
 		//[]string{"Action"},
 	}
+	rows1[0][Dolphin.SelfPort] = "[" + rows1[0][Dolphin.SelfPort] + "](fg-red)"
 
 	rows1[1] = append(rows1[1][0:1], character...)
 	rows1[2] = append(rows1[2][0:1], stock...)
@@ -182,6 +165,54 @@ func (c *ConsoleUI) DrawPlayerTable() {
 	table1.SetSize()
 
 	ui.Render(table1)
+
+	c.DrawLog()
+}
+
+var LOG_W = 56
+var LOG_H = 6
+
+func (c *ConsoleUI) DrawLog() {
+	var logText string
+	for i := len(c.LogEntries) - 1; i >= 0; i-- {
+		logText += c.LogEntries[i] + "\n"
+	}
+
+	log := ui.NewPar(logText)
+	log.Height = LOG_H
+	log.Y = c.CurrentY
+	c.AdjustY(LOG_H)
+	log.Width = LOG_W
+	log.TextFgColor = ui.ColorWhite
+	log.BorderLabel = "MATCH SUMMARY"
+	log.BorderFg = ui.ColorRed
+	log.BorderLabelFg = ui.ColorCyan
+
+	ui.Render(log)
+	c.DrawHelp()
+}
+
+var HELP_W int = 56
+var HELP_H int = 2
+
+func (c *ConsoleUI) DrawHelp() {
+	c.InsertLineBreaks(1)
+
+	par_text := []string{
+		"PRESS [q](fg-red) TO QUIT",
+		"USE [← →](fg-red) TO CHANGE YOUR PORT. ",
+	}
+	HELP_H = 2 + len(par_text)
+	p := ui.NewPar(strings.Join(par_text, "\n"))
+	p.Y = c.CurrentY
+	c.AdjustY(HELP_H)
+	p.Height = HELP_H
+	p.Width = HELP_W
+	p.TextFgColor = ui.ColorWhite
+	p.BorderLabel = "HELP"
+	p.BorderFg = ui.ColorCyan
+
+	ui.Render(p)
 }
 
 func (c *ConsoleUI) LogText(str string) {

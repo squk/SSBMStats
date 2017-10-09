@@ -10,16 +10,11 @@ import (
 )
 
 var Dolphin *DolphinManager
+var CUI *ConsoleUI
 var GameState *GameStateManager
 var FWriter *FrameWriter
-var CUI *ConsoleUI
 
 func init() {
-	Dolphin = NewDolphinManager()
-	GameState = NewGameStateManager()
-	CUI = NewConsoleUI()
-	FWriter = NewFrameWriter()
-
 	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -27,30 +22,65 @@ func init() {
 	log.SetFlags(log.Lshortfile)
 	log.SetOutput(f)
 
-	err = ui.Init()
-	if err != nil {
-		panic(err)
-	}
+	Dolphin = NewDolphinManager()
+	CUI = NewConsoleUI()
+	GameState = NewGameStateManager()
+	FWriter = NewFrameWriter()
+
+	log.Println(Dolphin.DolphinPath)
 
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
 		// press q to quit
-		Dolphin.StopLoop()
+		(*GameState.Socket).Close()
 		FWriter.Close()
-		f.Close()
+		Dolphin.StopLoop()
 		ui.StopLoop()
+		f.Close()
 	})
+
+	ui.Handle("/sys/kbd/<left>", func(ui.Event) {
+		Dolphin.DecreasePort()
+	})
+	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
+		Dolphin.IncreasePort()
+	})
+
 	go func() {
 		for Dolphin.RUNNING {
 			time.Sleep(200 * time.Millisecond)
-
 			CUI.Draw()
 		}
 	}()
-	go ui.Loop()
-
 }
 
 func Init() (err error) {
+	//if Dolphin.DolphinPath == "" {
+	//exists := false
+
+	//for !exists {
+	//reader := bufio.NewReader(os.Stdin)
+	////fmt.Print("Enter Dolphin Path: ")
+	//text, _ := reader.ReadString('\n')
+	//text = strings.TrimSuffix(strings.TrimSuffix(text, "\n"), " ")
+	//exe_name := "Dolphin"
+
+	//if runtime.GOOS == "windows" {
+	//exe_name += ".exe"
+	//} else {
+	//exe_name += ".app"
+	//}
+	////user_exists, _ := FilepathExists(filepath.Join(text, "User"))
+	////exists = user_exists || exists
+	//exists, _ = FilepathExists(text)
+
+	//if !exists {
+	////fmt.Println("\nInvalid Dolphin path")
+	//}
+	//finalPath := filepath.Join(text, "User")
+	//Dolphin.SetPath(finalPath)
+	//}
+	//}
+
 	if !Dolphin.Init() {
 		err = errors.New("DolphinManager failed to initialize")
 	}

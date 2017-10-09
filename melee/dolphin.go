@@ -1,7 +1,6 @@
 package melee
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -9,17 +8,17 @@ import (
 )
 
 type DolphinManager struct {
-	SelfPort     int
-	OpponentPort int
-	DolphinPath  string
-	MemoryPath   string
-	PipesPath    string
-	RUNNING      bool
+	SelfPort    int
+	DolphinPath string
+	MemoryPath  string
+	PipesPath   string
+	RUNNING     bool
 }
 
 func NewDolphinManager() *DolphinManager {
-	d := DolphinManager{}
-	d.SetPath("/Users/christian/Desktop/FM/DolphinManager.app/Contents/Resources/User")
+	d := DolphinManager{SelfPort: 1}
+	d.SetPath("/Users/christian/Desktop/FM/Dolphin.app/Contents/Resources/User")
+	log.Println(d.DolphinPath)
 	d.RUNNING = true
 
 	if d.MemoryPath != "" {
@@ -34,6 +33,22 @@ func NewDolphinManager() *DolphinManager {
 	return &d
 }
 
+func (d *DolphinManager) IncreasePort() {
+	d.SelfPort++
+
+	if d.SelfPort > 4 {
+		d.SelfPort = 1
+	}
+}
+
+func (d *DolphinManager) DecreasePort() {
+	d.SelfPort--
+
+	if d.SelfPort < 1 {
+		d.SelfPort = 4
+	}
+}
+
 func (d *DolphinManager) StopLoop() {
 	d.RUNNING = false
 }
@@ -44,7 +59,7 @@ func (d *DolphinManager) Init() bool {
 	} else {
 		err := CopyFile("Locations.txt", filepath.Join(d.MemoryPath, "Locations.txt"))
 		if err != nil {
-			fmt.Println(err)
+			return false
 		}
 	}
 
@@ -52,7 +67,11 @@ func (d *DolphinManager) Init() bool {
 }
 
 func (d *DolphinManager) SetPath(path string) bool {
-	ex, _ := FilepathExists(path)
+	ex, err := FilepathExists(path)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	if ex {
 		d.DolphinPath = path
@@ -60,10 +79,9 @@ func (d *DolphinManager) SetPath(path string) bool {
 		d.PipesPath = filepath.Join(path, "Pipes/")
 
 		_ = os.Mkdir(d.MemoryPath, os.ModePerm)
-		//fmt.Println("Created MemoryWatcher path")
 		_ = os.Mkdir(d.PipesPath, os.ModePerm)
-		//fmt.Println("Created Pipes path")
 	}
+
 	return ex
 }
 

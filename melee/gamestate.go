@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math"
 	"net"
 	"path/filepath"
@@ -32,7 +33,6 @@ type GameStateManager struct {
 
 	MemoryMap    MemoryMap
 	MemoryUpdate chan DolphinTuple
-	//ActionData   []ActionData
 }
 
 func NewGameStateManager() *GameStateManager {
@@ -43,7 +43,6 @@ func NewGameStateManager() *GameStateManager {
 		SocketMutex:  sync.Mutex{},
 		MemoryMap:    GetMemoryMap(),
 		MemoryUpdate: make(chan DolphinTuple),
-		//ActionData:      GetActionData(),
 	}
 
 	state.BindSocket()
@@ -102,21 +101,23 @@ func (g *GameStateManager) LogFrame() {
 }
 
 func (g *GameStateManager) Update() {
-	go g.ReadSocket()
+	go func() {
+		for Dolphin.RUNNING {
+			go g.ReadSocket()
 
-	m := <-g.MemoryUpdate
-	playerIndex := g.MemoryMap[m.Address].PlayerIndex
-	state := g.MemoryMap[m.Address].StateID
+			m := <-g.MemoryUpdate
+			playerIndex := g.MemoryMap[m.Address].PlayerIndex
+			state := g.MemoryMap[m.Address].StateID
 
-	g.AssignPlayerValues(playerIndex, state, m.Value)
+			g.AssignPlayerValues(playerIndex, state, m.Value)
 
-	if state == FRAME {
-		g.LogFrame()
-	}
+			if state == FRAME {
+				g.LogFrame()
+			}
 
-	if Dolphin.RUNNING {
-		g.Update()
-	}
+			log.Println("update")
+		}
+	}()
 }
 
 func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []byte) {
