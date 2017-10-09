@@ -17,9 +17,8 @@ type FrameCondition func(f Frame) WriteFlag
 type FrameValidator struct {
 	FrameBuffer *FrameBuffer
 
-	FrameConditions    map[string]FrameCondition
-	BufferConditions   map[string]BufferCondition
-	L_CANCEL_OPPORTUNE bool // prevents multiple frames being marked as a successful L-Cancel
+	FrameConditions  map[string]FrameCondition
+	BufferConditions map[string]BufferCondition
 }
 
 func NewFrameValidator(fb *FrameBuffer) FrameValidator {
@@ -59,16 +58,18 @@ func (fv *FrameValidator) AnyPassed() bool {
 	return false
 }
 
-func (fv *FrameValidator) L_CANCEL_PASS(f Frame) WriteFlag {
-	if !f.Empty() {
-		action, _ := f.Players[Dolphin.SelfPath].GetAction()
+var L_CANCEL_OPPORTUNE bool // prevents multiple frames being marked as a successful L-Cancel
 
-		if !fv.L_CANCEL_OPPORTUNE {
-			animation_speed, _ := f.Players[Dolphin.SelfPath].GetFloat(SPEED_ANIMATION)
-			char, _ := f.Players[Dolphin.SelfPath].GetCharacter()
+func L_CANCEL_PASS(f Frame) WriteFlag {
+	if !f.Empty() {
+		action, _ := f.Players[Dolphin.SelfPort].GetAction()
+
+		if !L_CANCEL_OPPORTUNE {
+			animation_speed, _ := f.Players[Dolphin.SelfPort].GetFloat(SPEED_ANIMATION)
+			char, _ := f.Players[Dolphin.SelfPort].GetCharacter()
 
 			if CAN_L_CANCEL(action) {
-				fv.L_CANCEL_OPPORTUNE = true
+				L_CANCEL_OPPORTUNE = true
 				animation := 0
 
 				if action == BAIR_LANDING {
@@ -93,7 +94,7 @@ func (fv *FrameValidator) L_CANCEL_PASS(f Frame) WriteFlag {
 			}
 		} else {
 			if !CAN_L_CANCEL(action) {
-				fv.L_CANCEL_OPPORTUNE = false
+				L_CANCEL_OPPORTUNE = false
 			}
 		}
 	}
