@@ -18,16 +18,13 @@ type DolphinManager struct {
 func NewDolphinManager() *DolphinManager {
 	d := DolphinManager{SelfPort: 1}
 	d.SetPath("/Users/christian/Desktop/FM/Dolphin.app/Contents/Resources/User")
-	log.Println(d.DolphinPath)
 	d.RUNNING = true
 
 	if d.MemoryPath != "" {
 		_ = os.Mkdir(d.MemoryPath, os.ModePerm)
-		log.Println("Created MemoryWatcher path")
 	}
 	if d.PipesPath != "" {
 		_ = os.Mkdir(d.PipesPath, os.ModePerm)
-		log.Println("Created Pipes path")
 	}
 
 	return &d
@@ -39,6 +36,8 @@ func (d *DolphinManager) IncreasePort() {
 	if d.SelfPort > 4 {
 		d.SelfPort = 1
 	}
+
+	FWriter.Match.SelfCharacter = GameState.Players[d.SelfPort].GetCharacterString()
 }
 
 func (d *DolphinManager) DecreasePort() {
@@ -47,6 +46,8 @@ func (d *DolphinManager) DecreasePort() {
 	if d.SelfPort < 1 {
 		d.SelfPort = 4
 	}
+
+	FWriter.Match.SelfCharacter = GameState.Players[d.SelfPort].GetCharacterString()
 }
 
 func (d *DolphinManager) StopLoop() {

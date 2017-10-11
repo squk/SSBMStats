@@ -33,6 +33,7 @@ type GameStateManager struct {
 
 	MemoryMap    MemoryMap
 	MemoryUpdate chan DolphinTuple
+	APMStore     [120]int
 }
 
 func NewGameStateManager() *GameStateManager {
@@ -64,7 +65,7 @@ func (g *GameStateManager) ReadSocket() {
 
 	if err != nil {
 		c.Close()
-		panic(err)
+		log.Fatalln(err)
 		return
 	}
 
@@ -74,7 +75,7 @@ func (g *GameStateManager) ReadSocket() {
 
 	if err != nil {
 		c.Close()
-		panic(err)
+		log.Fatalln(err)
 		return
 	} else {
 		g.MemoryUpdate <- DolphinTuple{s[0], decoded}
@@ -88,16 +89,21 @@ func (g *GameStateManager) BindSocket() {
 	c, err := net.ListenUnixgram("unixgram", &net.UnixAddr{p, "unixgram"})
 
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	g.Socket = c
 }
 
-func (g *GameStateManager) LogFrame() {
-	pc := g.Players
-	frame := NewFrame(pc, g.MenuState, g.Stage)
-	go FWriter.LogFrame(frame)
+var apmIndex int = 0
+
+func (g *GameStateManager) CalculateAPM() int {
+	sum := 0
+	for _, n := range g.APMStore {
+		sum += n
+	}
+	// 120 frames = 2 seconds.
+	return sum
 }
 
 func (g *GameStateManager) Update() {
@@ -106,18 +112,34 @@ func (g *GameStateManager) Update() {
 			go g.ReadSocket()
 
 			m := <-g.MemoryUpdate
+
 			playerIndex := g.MemoryMap[m.Address].PlayerIndex
 			state := g.MemoryMap[m.Address].StateID
 
 			g.AssignPlayerValues(playerIndex, state, m.Value)
 
 			if state == FRAME {
-				g.LogFrame()
+				g.OnFrame()
 			}
-
-			log.Println("update")
 		}
 	}()
+}
+
+func (g *GameStateManager) OnFrame() {
+	//if apmIndex >= 120 {
+	////log.Println(g.APMStore)
+	//apmIndex = 0
+	//}
+	//if g.Players[Dolphin.SelfPort].GetController() != g.Players[Dolphin.SelfPort].GetControllerPrevious() {
+	//g.APMStore[apmIndex] = g.Players[Dolphin.SelfPort].GetController().Count()
+	//}
+	//log.Printf("%x %x\n", g.Players[Dolphin.SelfPort].GetController(), g.Players[Dolphin.SelfPort].GetControllerPrevious())
+	//apmIndex++
+
+	player_container := g.Players
+
+	frame := NewFrame(player_container, g.MenuState, g.Stage)
+	go FWriter.LogFrame(frame)
 }
 
 func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []byte) {
@@ -139,37 +161,52 @@ func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []
 	}
 
 	bigEndianIntIDs := []StateID{
-		READY_TO_START, CONTROLLER_STATUS, ACTION, CHARACTER,
+		READY_TO_START, CONTROLLER_STATUS, ACTION, CHARACTER, CONTROLLER_DATA,
 	}
 
 	if state == FRAME {
 		g.FrameNumber = bigEndianInt
 	} else if state == STAGE {
-		val := Stage((littleEndianInt >> 8) & 0xFF)
-		g.Stage = val
+		g.SetStage(Stage((littleEndianInt >> 8) & 0xFF))
 	} else if state == MENU_STATE {
-		val := MenuState(bigEndianInt & 0xFF)
-		g.MenuState = val
+		g.SetMenuState(MenuState(bigEndianInt & 0xFF))
 	} else if state == STOCK {
 		if index > 0 && index <= 4 {
 			g.Players[index].SetUint(STOCK, littleEndianInt)
 		}
 	} else if state == CHARACTER {
-		g.Players[index].SetCharacter(state, Character(bigEndianInt>>24))
-	} else if state == ACTION {
-		g.Players[index].SetAction(state, Action(bigEndianInt))
-		//log.Printf("0x%08X  0x%08X\n", bigEndianInt, littleEndianInt)
-	} else if StateSliceContains(floatIDs, state) {
-		if state == PERCENT {
-			g.Players[index].SetUint(PERCENT, uint32(value[1]))
-		} else {
-			g.Players[index].SetFloat(state, floatVal)
+		g.Players[index].SetCharacter(bigEndianInt >> 24)
+
+		if index == Dolphin.SelfPort {
+			FWriter.Match.SelfCharacter = g.Players[index].GetCharacterString()
 		}
+	} else if state == ACTION {
+		g.Players[index].SetAction(bigEndianInt)
+	} else if state == PERCENT {
+		g.Players[index].SetUint(PERCENT, uint32(value[1]))
+	} else if state == CONTROLLER_DATA {
+		g.Players[index].SetController(bigEndianInt)
+	} else if state == CONTROLLER_DATA_PREVIOUS {
+		g.Players[index].SetControllerPrevious(bigEndianInt)
+	} else if StateSliceContains(floatIDs, state) {
+		g.Players[index].SetFloat(state, floatVal)
 	} else if StateSliceContains(littleEndianIntIDs, state) {
 		g.Players[index].SetUint(state, littleEndianInt)
 	} else if StateSliceContains(bigEndianIntIDs, state) {
 		g.Players[index].SetUint(state, bigEndianInt)
 	}
+}
+
+func (g *GameStateManager) SetMenuState(state MenuState) {
+	if state == CHARACTER_SELECT || state == POSTGAME_SCORES {
+		FWriter.Flush()
+	}
+	g.MenuState = state
+}
+
+func (g *GameStateManager) SetStage(state Stage) {
+	g.Stage = state
+	FWriter.Match.Stage = GetStageName(state)
 }
 
 func StateSliceContains(s []StateID, f StateID) bool {

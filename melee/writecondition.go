@@ -9,10 +9,10 @@ const (
 )
 
 // checks for a condition requiring multiple frames
-type BufferCondition func(fs *FrameBuffer) WriteFlag
+type BufferCondition func(fs *FrameBuffer) (WriteFlag, DiskFrame)
 
 // checks for a condition only requiring a single frame
-type FrameCondition func(f Frame) WriteFlag
+type FrameCondition func(f Frame) (WriteFlag, DiskFrame)
 
 type FrameValidator struct {
 	FrameBuffer *FrameBuffer
@@ -26,42 +26,39 @@ func NewFrameValidator(fb *FrameBuffer) FrameValidator {
 	b_conditions := make(map[string]BufferCondition)
 
 	f_conditions["L_CANCEL_PASS"] = L_CANCEL_PASS
-	f_conditions["L_CANCEL_MISS"] = L_CANCEL_MISS
 
 	fv := FrameValidator{fb, f_conditions, b_conditions}
 	return fv
 }
 
-func (fv *FrameValidator) AnyPassed() bool {
-	current_frame, exists := fv.FrameBuffer.GetCurrent()
+func (fv *FrameValidator) CheckAll() {
+	frame, exists := fv.FrameBuffer.GetCurrent()
 
-	if exists && !current_frame.Empty() {
+	if exists && !frame.Empty() {
 		for _, fc := range fv.FrameConditions {
-			frame, exists := fv.FrameBuffer.GetCurrent()
-			if exists {
-				state := fc(frame)
-				if state == TRUE {
-					return true
-				}
+			// a Frame will only be logged by a FrameCondition of the
+			// WriteFlag is set to TRUE
+			if ok, data := fc(frame); ok == TRUE {
+				FWriter.Write(data)
 			}
 		}
 
-		for _, bc := range fv.BufferConditions {
-			state := bc(fv.FrameBuffer)
-			if state == TRUE {
-				return true
-			}
-		}
+		//for _, bc := range fv.BufferConditions {
+		//if ok, _ := bc(fv.FrameBuffer); ok == TRUE {
+
+		//}
+		//}
 
 	}
-
-	return false
 }
 
 var L_CANCEL_OPPORTUNE bool // prevents multiple frames being marked as a successful L-Cancel
 
-func L_CANCEL_PASS(f Frame) WriteFlag {
-	if !f.Empty() {
+// returns a DiskFrame and whether or not that DiskFrame should be logged
+func L_CANCEL_PASS(f Frame) (flag WriteFlag, data DiskFrame) {
+	flag = INDETERMINATE
+
+	if !f.Empty() && f.MenuState == IN_GAME {
 		action, _ := f.Players[Dolphin.SelfPort].GetAction()
 
 		if !L_CANCEL_OPPORTUNE {
@@ -86,10 +83,22 @@ func L_CANCEL_PASS(f Frame) WriteFlag {
 
 				l_speed := (LANDING_SPEEDS[char][animation] * 2.0) - CANCEL_TOLERANCE
 
+				var msg string
 				if animation_speed >= l_speed {
-					return TRUE
+					flag = TRUE
+					msg = "L_CANCEL_PASS"
 				} else {
-					return FALSE
+					flag = TRUE
+					msg = "L_CANCEL_MISS"
+				}
+
+				data = DiskFrame{
+					BasicFrame: BasicFrame{
+						GameState.FrameNumber,
+						ACTION_NAMES[action],
+						msg,
+					},
+					DetailedFrame: Frame{},
 				}
 			}
 		} else {
@@ -98,19 +107,8 @@ func L_CANCEL_PASS(f Frame) WriteFlag {
 			}
 		}
 	}
-	return INDETERMINATE
-}
 
-func L_CANCEL_MISS(f Frame) WriteFlag {
-	pass := L_CANCEL_PASS(f)
-
-	if pass == TRUE {
-		return FALSE
-	} else if pass == FALSE {
-		return TRUE
-	}
-
-	return INDETERMINATE
+	return flag, data
 }
 
 func CAN_L_CANCEL(a Action) bool {
