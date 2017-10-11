@@ -62,6 +62,8 @@ const (
 	PREV_X
 	PREV_ACTION
 	CONTROLLER_STATUS
+	CONTROLLER_DATA
+	CONTROLLER_DATA_PREVIOUS
 
 	// Non-Player states
 	MENU_STATE
@@ -283,6 +285,11 @@ func GetMemoryMap() MemoryMap {
 		"00453F14":       {IS_ZELDA, 2},
 		"00454DA4":       {IS_ZELDA, 3},
 		"00455C34":       {IS_ZELDA, 4},
+
+		"004C1FAC": {CONTROLLER_DATA, 1},
+		"004C1FF0": {CONTROLLER_DATA, 2},
+		"004C2034": {CONTROLLER_DATA, 3},
+		"004C2078": {CONTROLLER_DATA, 4},
 	}
 	return MemoryMap
 }
