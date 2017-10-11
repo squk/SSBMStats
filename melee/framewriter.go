@@ -33,9 +33,9 @@ type DiskFrame struct {
 	DetailedFrame Frame
 }
 
-func NewFrame(players PlayerContainer, m MenuState, s Stage) Frame {
+func NewFrame(players PlayerContainer) Frame {
 	f := Frame{
-		m, s, players[0 : PLAYER4+1], false,
+		players[0 : PLAYER4+1], false,
 	}
 	return f
 }
@@ -144,12 +144,10 @@ func (fw *FrameWriter) LogFrame(f Frame) {
 	fw.FrameBuffer.Insert(f)
 
 	validator := NewFrameValidator(fw.FrameBuffer)
-	current_frame, exists := fw.FrameBuffer.GetCurrent()
+	_, exists := fw.FrameBuffer.GetCurrent()
 
 	if exists {
-		if current_frame.MenuState == IN_GAME {
-			validator.CheckAll()
-		}
+		validator.CheckAll()
 	}
 }
 

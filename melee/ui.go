@@ -9,7 +9,15 @@ import (
 	ui "github.com/gizak/termui"
 )
 
+type UIState byte
+
+const (
+	DEFAULT UIState = iota
+	MATCH_VIEW
+)
+
 type ConsoleUI struct {
+	UIState            UIState
 	LogEntries         []string
 	Draws              uint64
 	CurrentX, CurrentY int
@@ -21,26 +29,17 @@ func NewConsoleUI() *ConsoleUI {
 		log.Fatalln(err)
 	}
 
-	ui.Handle("/sys/kbd/q", func(ui.Event) {
-		// press q to quit
-		(*GameState.Socket).Close()
-		FWriter.Close()
-		Dolphin.StopLoop()
-		ui.StopLoop()
-	})
-
-	ui.Handle("/sys/kbd/<left>", func(ui.Event) {
-		Dolphin.DecreasePort()
-	})
-	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
-		Dolphin.IncreasePort()
-	})
-
-	return &ConsoleUI{[]string{" ", " ", " "}, 0, 0, 0}
+	return &ConsoleUI{0, []string{" ", " ", " "}, 0, 0, 0}
 }
 
 func (c *ConsoleUI) Draw() {
-	c.DrawFrame()
+	ui.ResetHandlers()
+
+	if c.UIState == DEFAULT {
+		c.DrawDefault()
+	} else if c.UIState == MATCH_VIEW {
+		c.DrawMatchView()
+	}
 
 	c.Draws++
 	c.CurrentX = 0
@@ -55,12 +54,34 @@ func (c *ConsoleUI) AdjustY(y int) {
 	c.CurrentY += y
 }
 
+func (c *ConsoleUI) DrawDefault() {
+	ui.Handle("/sys/kbd/q", func(ui.Event) {
+		// press q to quit
+		(*GameState.Socket).Close()
+		FWriter.Close()
+		Dolphin.StopLoop()
+		ui.StopLoop()
+	})
+	ui.Handle("/sys/kbd/v", func(ui.Event) {
+		ui.Clear()
+		c.UIState = MATCH_VIEW
+	})
+	ui.Handle("/sys/kbd/<left>", func(ui.Event) {
+		Dolphin.DecreasePort()
+	})
+	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
+		Dolphin.IncreasePort()
+	})
+
+	c.DrawFrameBox()
+}
+
 var character = make([]string, 4)
 
 var FRAME_W int = 9
 var FRAME_H int = 3
 
-func (c *ConsoleUI) DrawFrame() {
+func (c *ConsoleUI) DrawFrameBox() {
 	frame := ui.NewPar(strconv.FormatUint(uint64(GameState.FrameNumber), 10))
 
 	frame.X = 0
@@ -77,13 +98,13 @@ func (c *ConsoleUI) DrawFrame() {
 	frame.BorderLabelFg = ui.ColorCyan
 	ui.Render(frame)
 
-	c.DrawStage()
+	c.DrawStageBox()
 }
 
 var STAGE_W int = 20
 var STAGE_H int = 3
 
-func (c *ConsoleUI) DrawStage() {
+func (c *ConsoleUI) DrawStageBox() {
 	stage := ui.NewPar(GetStageName(GameState.Stage))
 
 	stage.X = c.CurrentX
@@ -101,13 +122,13 @@ func (c *ConsoleUI) DrawStage() {
 	stage.BorderLabelFg = ui.ColorCyan
 	ui.Render(stage)
 
-	c.DrawMenuState()
+	c.DrawMenuStateBox()
 }
 
 var MENU_STATE_W int = 16
 var MENU_STATE_H int = 3
 
-func (c *ConsoleUI) DrawMenuState() {
+func (c *ConsoleUI) DrawMenuStateBox() {
 	menustate := ui.NewPar(GetMenuStateName(GameState.MenuState))
 
 	menustate.X = c.CurrentX
@@ -125,13 +146,13 @@ func (c *ConsoleUI) DrawMenuState() {
 	menustate.BorderLabelFg = ui.ColorCyan
 	ui.Render(menustate)
 
-	c.DrawAPM()
+	c.DrawAPMBox()
 }
 
 var APM_W int = 10
 var APM_H int = 3
 
-func (c *ConsoleUI) DrawAPM() {
+func (c *ConsoleUI) DrawAPMBox() {
 	APM := ui.NewPar(fmt.Sprintf("%d", GameState.CalculateAPM()))
 
 	APM.X = c.CurrentX
@@ -149,13 +170,13 @@ func (c *ConsoleUI) DrawAPM() {
 	APM.BorderLabelFg = ui.ColorCyan
 	ui.Render(APM)
 
-	c.DrawPlayerTable()
+	c.DrawPlayerTableBox()
 }
 
 var PLAYER_TABLE_W int = 95
 var PLAYER_TABLE_H int = 10
 
-func (c *ConsoleUI) DrawPlayerTable() {
+func (c *ConsoleUI) DrawPlayerTableBox() {
 	c.CurrentX = 0
 	percent := make([]string, 4)
 	stock := make([]string, 4)
@@ -207,13 +228,13 @@ func (c *ConsoleUI) DrawPlayerTable() {
 
 	ui.Render(table1)
 
-	c.DrawLog()
+	c.DrawLogBox()
 }
 
 var LOG_W = 56
 var LOG_H = 6
 
-func (c *ConsoleUI) DrawLog() {
+func (c *ConsoleUI) DrawLogBox() {
 	var logText string
 	for i := len(c.LogEntries) - 1; i >= 0; i-- {
 		logText += c.LogEntries[i] + "\n"
@@ -230,17 +251,18 @@ func (c *ConsoleUI) DrawLog() {
 	log.BorderLabelFg = ui.ColorGreen
 
 	ui.Render(log)
-	c.DrawHelp()
+	c.DrawDefaultHelpBox()
 }
 
 var HELP_W int = 56
 var HELP_H int = 2
 
-func (c *ConsoleUI) DrawHelp() {
+func (c *ConsoleUI) DrawDefaultHelpBox() {
 	c.InsertLineBreaks(1)
 
 	par_text := []string{
 		"PRESS [q](fg-red) TO QUIT",
+		"PRESS [v](fg-red) TO VIEW PREVIOUS MATCHES. ",
 		"USE [← →](fg-red) TO CHANGE YOUR PORT. ",
 	}
 	HELP_H = 2 + len(par_text)

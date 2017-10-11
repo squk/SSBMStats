@@ -58,7 +58,7 @@ var L_CANCEL_OPPORTUNE bool // prevents multiple frames being marked as a succes
 func L_CANCEL_PASS(f Frame) (flag WriteFlag, data DiskFrame) {
 	flag = INDETERMINATE
 
-	if !f.Empty() && f.MenuState == IN_GAME {
+	if !f.Empty() {
 		action, _ := f.Players[Dolphin.SelfPort].GetAction()
 
 		if !L_CANCEL_OPPORTUNE {
