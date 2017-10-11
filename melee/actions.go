@@ -250,24 +250,24 @@ const (
 	NEUTRAL_B_ATTACKING_AIR   = 0x15B
 	NEUTRAL_B_FULL_CHARGE_AIR = 0x15C
 
-	SWORD_DANCE_1          = 0x15d
-	SWORD_DANCE_2_HIGH     = 0x15e
-	SWORD_DANCE_2_MID      = 0x15f
-	SWORD_DANCE_3_HIGH     = 0x160
-	SWORD_DANCE_3_MID      = 0x161
-	SWORD_DANCE_3_LOW      = 0x162
-	SWORD_DANCE_4_HIGH     = 0x163
-	SWORD_DANCE_4_MID      = 0x164
-	SWORD_DANCE_4_LOW      = 0x165
-	SWORD_DANCE_1_AIR      = 0x166
-	SWORD_DANCE_2_HIGH_AIR = 0x167
-	SWORD_DANCE_2_MID_AIR  = 0x168
-	SWORD_DANCE_3_HIGH_AIR = 0x169
-	SWORD_DANCE_3_MID_AIR  = 0x16a
-	SWORD_DANCE_3_LOW_AIR  = 0x16b
-	SWORD_DANCE_4_HIGH_AIR = 0x16c
-	SWORD_DANCE_4_MID_AIR  = 0x16d
-	SWORD_DANCE_4_LOW_AIR  = 0x16e
+	//SWORD_DANCE_1          = 0x15d
+	//SWORD_DANCE_2_HIGH     = 0x15e
+	//SWORD_DANCE_2_MID      = 0x15f
+	//SWORD_DANCE_3_HIGH     = 0x160
+	//SWORD_DANCE_3_MID      = 0x161
+	//SWORD_DANCE_3_LOW      = 0x162
+	//SWORD_DANCE_4_HIGH     = 0x163
+	//SWORD_DANCE_4_MID      = 0x164
+	//SWORD_DANCE_4_LOW      = 0x165
+	//SWORD_DANCE_1_AIR      = 0x166
+	//SWORD_DANCE_2_HIGH_AIR = 0x167
+	//SWORD_DANCE_2_MID_AIR  = 0x168
+	//SWORD_DANCE_3_HIGH_AIR = 0x169
+	//SWORD_DANCE_3_MID_AIR  = 0x16a
+	//SWORD_DANCE_3_LOW_AIR  = 0x16b
+	//SWORD_DANCE_4_HIGH_AIR = 0x16c
+	//SWORD_DANCE_4_MID_AIR  = 0x16d
+	//SWORD_DANCE_4_LOW_AIR  = 0x16e
 
 	FOX_ILLUSION_START     = 0x15e
 	FOX_ILLUSION           = 0x15f
@@ -286,16 +286,266 @@ const (
 
 	UP_B_GROUND       = 0x16f
 	SHINE_RELEASE_AIR = 0x170
-	UP_B_AIR          = 0x170 // The upswing of the UP-B. (At least for marth)
+	//UP_B_AIR          = 0x170 // The upswing of the UP-B. (At least for marth)
 
 	MARTH_COUNTER         = 0x171
 	PARASOL_FALLING       = 0x172
 	MARTH_COUNTER_FALLING = 0x173
 
-	NESS_SHEILD_START   = 0x174
+	//NESS_SHEILD_START   = 0x174
 	NESS_SHEILD         = 0x174
 	NESS_SHEILD_AIR     = 0x175
 	NESS_SHEILD_AIR_END = 0x177
 
 	UNKNOWN_ANIMATION = 0xffff
 )
+
+var ACTION_NAMES = map[Action]string{
+	DEAD_DOWN:                          "DEAD_DOWN",
+	DEAD_LEFT:                          "DEAD_LEFT",
+	DEAD_RIGHT:                         "DEAD_RIGHT",
+	DEAD_FLY_STAR:                      "DEAD_FLY_STAR",
+	DEAD_FLY:                           "DEAD_FLY",
+	DEAD_FLY_SPLATTER:                  "DEAD_FLY_SPLATTER",
+	DEAD_FLY_SPLATTER_FLAT:             "DEAD_FLY_SPLATTER_FLAT",
+	ON_HALO_DESCENT:                    "ON_HALO_DESCENT",
+	ON_HALO_WAIT:                       "ON_HALO_WAIT",
+	STANDING:                           "STANDING",
+	WALK_SLOW:                          "WALK_SLOW",
+	WALK_MIDDLE:                        "WALK_MIDDLE",
+	WALK_FAST:                          "WALK_FAST",
+	TURNING:                            "TURNING",
+	TURNING_RUN:                        "TURNING_RUN",
+	DASHING:                            "DASHING",
+	RUNNING:                            "RUNNING",
+	RUN_DIRECT:                         "RUN_DIRECT",
+	RUN_BRAKE:                          "RUN_BRAKE",
+	KNEE_BEND:                          "KNEE_BEND",
+	JUMPING_FORWARD:                    "JUMPING_FORWARD",
+	JUMPING_BACKWARD:                   "JUMPING_BACKWARD",
+	JUMPING_ARIAL_FORWARD:              "JUMPING_ARIAL_FORWARD",
+	JUMPING_ARIAL_BACKWARD:             "JUMPING_ARIAL_BACKWARD",
+	FALLING:                            "FALLING",
+	FALLING_AERIAL:                     "FALLING_AERIAL",
+	DEAD_FALL:                          "DEAD_FALL",
+	SPECIAL_FALL_FORWARD:               "SPECIAL_FALL_FORWARD",
+	SPECIAL_FALL_BACK:                  "SPECIAL_FALL_BACK",
+	TUMBLING:                           "TUMBLING",
+	CROUCH_START:                       "CROUCH_START",
+	CROUCHING:                          "CROUCHING",
+	CROUCH_END:                         "CROUCH_END",
+	LANDING:                            "LANDING",
+	LANDING_SPECIAL:                    "LANDING_SPECIAL",
+	NEUTRAL_ATTACK_1:                   "NEUTRAL_ATTACK_1",
+	NEUTRAL_ATTACK_2:                   "NEUTRAL_ATTACK_2",
+	NEUTRAL_ATTACK_3:                   "NEUTRAL_ATTACK_3",
+	LOOPING_ATTACK_START:               "LOOPING_ATTACK_START",
+	LOOPING_ATTACK_MIDDLE:              "LOOPING_ATTACK_MIDDLE",
+	LOOPING_ATTACK_END:                 "LOOPING_ATTACK_END",
+	DASH_ATTACK:                        "DASH_ATTACK",
+	FTILT_HIGH:                         "FTILT_HIGH",
+	FTILT_HIGH_MID:                     "FTILT_HIGH_MID",
+	FTILT_MID:                          "FTILT_MID",
+	FTILT_LOW_MID:                      "FTILT_LOW_MID",
+	FTILT_LOW:                          "FTILT_LOW",
+	UPTILT:                             "UPTILT",
+	DOWNTILT:                           "DOWNTILT",
+	FSMASH_HIGH:                        "FSMASH_HIGH",
+	FSMASH_MID_HIGH:                    "FSMASH_MID_HIGH",
+	FSMASH_MID:                         "FSMASH_MID",
+	FSMASH_MID_LOW:                     "FSMASH_MID_LOW",
+	FSMASH_LOW:                         "FSMASH_LOW",
+	UPSMASH:                            "UPSMASH",
+	DOWNSMASH:                          "DOWNSMASH",
+	NAIR:                               "NAIR",
+	FAIR:                               "FAIR",
+	BAIR:                               "BAIR",
+	UAIR:                               "UAIR",
+	DAIR:                               "DAIR",
+	NAIR_LANDING:                       "NAIR_LANDING",
+	FAIR_LANDING:                       "FAIR_LANDING",
+	BAIR_LANDING:                       "BAIR_LANDING",
+	UAIR_LANDING:                       "UAIR_LANDING",
+	DAIR_LANDING:                       "DAIR_LANDING",
+	DAMAGE_HIGH_1:                      "DAMAGE_HIGH_1",
+	DAMAGE_HIGH_2:                      "DAMAGE_HIGH_2",
+	DAMAGE_HIGH_3:                      "DAMAGE_HIGH_3",
+	DAMAGE_NEUTRAL_1:                   "DAMAGE_NEUTRAL_1",
+	DAMAGE_NEUTRAL_2:                   "DAMAGE_NEUTRAL_2",
+	DAMAGE_NEUTRAL_3:                   "DAMAGE_NEUTRAL_3",
+	DAMAGE_LOW_1:                       "DAMAGE_LOW_1",
+	DAMAGE_LOW_2:                       "DAMAGE_LOW_2",
+	DAMAGE_LOW_3:                       "DAMAGE_LOW_3",
+	DAMAGE_AIR_1:                       "DAMAGE_AIR_1",
+	DAMAGE_AIR_2:                       "DAMAGE_AIR_2",
+	DAMAGE_AIR_3:                       "DAMAGE_AIR_3",
+	DAMAGE_FLY_HIGH:                    "DAMAGE_FLY_HIGH",
+	DAMAGE_FLY_NEUTRAL:                 "DAMAGE_FLY_NEUTRAL",
+	DAMAGE_FLY_LOW:                     "DAMAGE_FLY_LOW",
+	DAMAGE_FLY_TOP:                     "DAMAGE_FLY_TOP",
+	DAMAGE_FLY_ROLL:                    "DAMAGE_FLY_ROLL",
+	ITEM_PICKUP_LIGHT:                  "ITEM_PICKUP_LIGHT",
+	ITEM_PICKUP_HEAVY:                  "ITEM_PICKUP_HEAVY",
+	ITEM_THROW_LIGHT_FORWARD:           "ITEM_THROW_LIGHT_FORWARD",
+	ITEM_THROW_LIGHT_BACK:              "ITEM_THROW_LIGHT_BACK",
+	ITEM_THROW_LIGHT_HIGH:              "ITEM_THROW_LIGHT_HIGH",
+	ITEM_THROW_LIGHT_LOW:               "ITEM_THROW_LIGHT_LOW",
+	ITEM_THROW_LIGHT_DASH:              "ITEM_THROW_LIGHT_DASH",
+	ITEM_THROW_LIGHT_DROP:              "ITEM_THROW_LIGHT_DROP",
+	ITEM_THROW_LIGHT_AIR_FORWARD:       "ITEM_THROW_LIGHT_AIR_FORWARD",
+	ITEM_THROW_LIGHT_AIR_BACK:          "ITEM_THROW_LIGHT_AIR_BACK",
+	ITEM_THROW_LIGHT_AIR_HIGH:          "ITEM_THROW_LIGHT_AIR_HIGH",
+	ITEM_THROW_LIGHT_AIR_LOW:           "ITEM_THROW_LIGHT_AIR_LOW",
+	ITEM_THROW_HEAVY_FORWARD:           "ITEM_THROW_HEAVY_FORWARD",
+	ITEM_THROW_HEAVY_BACK:              "ITEM_THROW_HEAVY_BACK",
+	ITEM_THROW_HEAVY_HIGH:              "ITEM_THROW_HEAVY_HIGH",
+	ITEM_THROW_HEAVY_LOW:               "ITEM_THROW_HEAVY_LOW",
+	ITEM_THROW_LIGHT_SMASH_FORWARD:     "ITEM_THROW_LIGHT_SMASH_FORWARD",
+	ITEM_THROW_LIGHT_SMASH_BACK:        "ITEM_THROW_LIGHT_SMASH_BACK",
+	ITEM_THROW_LIGHT_SMASH_UP:          "ITEM_THROW_LIGHT_SMASH_UP",
+	ITEM_THROW_LIGHT_SMASH_DOWN:        "ITEM_THROW_LIGHT_SMASH_DOWN",
+	ITEM_THROW_LIGHT_AIR_SMASH_FORWARD: "ITEM_THROW_LIGHT_AIR_SMASH_FORWARD",
+	ITEM_THROW_LIGHT_AIR_SMASH_BACK:    "ITEM_THROW_LIGHT_AIR_SMASH_BACK",
+	ITEM_THROW_LIGHT_AIR_SMASH_HIGH:    "ITEM_THROW_LIGHT_AIR_SMASH_HIGH",
+	ITEM_THROW_LIGHT_AIR_SMASH_LOW:     "ITEM_THROW_LIGHT_AIR_SMASH_LOW",
+	ITEM_THROW_HEAVY_AIR_SMASH_FORWARD: "ITEM_THROW_HEAVY_AIR_SMASH_FORWARD",
+	ITEM_THROW_HEAVY_AIR_SMASH_BACK:    "ITEM_THROW_HEAVY_AIR_SMASH_BACK",
+	ITEM_THROW_HEAVY_AIR_SMASH_HIGH:    "ITEM_THROW_HEAVY_AIR_SMASH_HIGH",
+	ITEM_THROW_HEAVY_AIR_SMASH_LOW:     "ITEM_THROW_HEAVY_AIR_SMASH_LOW",
+	BEAM_SWORD_SWING_1:                 "BEAM_SWORD_SWING_1",
+	BEAM_SWORD_SWING_2:                 "BEAM_SWORD_SWING_2",
+	BEAM_SWORD_SWING_3:                 "BEAM_SWORD_SWING_3",
+	BEAM_SWORD_SWING_4:                 "BEAM_SWORD_SWING_4",
+	SHIELD_START:                       "SHIELD_START",
+	SHIELD:                             "SHIELD",
+	SHIELD_RELEASE:                     "SHIELD_RELEASE",
+	SHIELD_STUN:                        "SHIELD_STUN",
+	SHIELD_REFLECT:                     "SHIELD_REFLECT",
+	TECH_MISS_UP:                       "TECH_MISS_UP",
+	LYING_GROUND_UP:                    "LYING_GROUND_UP",
+	LYING_GROUND_UP_HIT:                "LYING_GROUND_UP_HIT",
+	GROUND_GETUP:                       "GROUND_GETUP",
+	GROUND_ATTACK_UP:                   "GROUND_ATTACK_UP",
+	GROUND_ROLL_FORWARD_UP:             "GROUND_ROLL_FORWARD_UP",
+	GROUND_ROLL_BACKWARD_UP:            "GROUND_ROLL_BACKWARD_UP",
+	TECH_MISS_DOWN:                     "TECH_MISS_DOWN",
+	LYING_GROUND_DOWN:                  "LYING_GROUND_DOWN",
+	DAMAGE_GROUND:                      "DAMAGE_GROUND",
+	NEUTRAL_GETUP:                      "NEUTRAL_GETUP",
+	GETUP_ATTACK:                       "GETUP_ATTACK",
+	GROUND_ROLL_FORWARD_DOWN:           "GROUND_ROLL_FORWARD_DOWN",
+	GROUND_ROLL_BACKWARD_DOWN:          "GROUND_ROLL_BACKWARD_DOWN",
+	NEUTRAL_TECH:                       "NEUTRAL_TECH",
+	FORWARD_TECH:                       "FORWARD_TECH",
+	BACKWARD_TECH:                      "BACKWARD_TECH",
+	WALL_TECH:                          "WALL_TECH",
+	WALL_TECH_JUMP:                     "WALL_TECH_JUMP",
+	CEILING_TECH:                       "CEILING_TECH",
+	SHIELD_BREAK_FLY:                   "SHIELD_BREAK_FLY",
+	SHIELD_BREAK_FALL:                  "SHIELD_BREAK_FALL",
+	SHIELD_BREAK_DOWN_U:                "SHIELD_BREAK_DOWN_U",
+	SHIELD_BREAK_DOWN_D:                "SHIELD_BREAK_DOWN_D",
+	SHIELD_BREAK_STAND_U:               "SHIELD_BREAK_STAND_U",
+	SHIELD_BREAK_STAND_D:               "SHIELD_BREAK_STAND_D",
+	SHIELD_BREAK_TEETER:                "SHIELD_BREAK_TEETER",
+	GRAB:                               "GRAB",
+	GRAB_PULLING:                       "GRAB_PULLING",
+	GRAB_RUNNING:                       "GRAB_RUNNING",
+	GRAB_WAIT:                          "GRAB_WAIT",
+	GRAB_PUMMEL:                        "GRAB_PUMMEL",
+	GRAB_BREAK:                         "GRAB_BREAK",
+	THROW_FORWARD:                      "THROW_FORWARD",
+	THROW_BACK:                         "THROW_BACK",
+	THROW_UP:                           "THROW_UP",
+	THROW_DOWN:                         "THROW_DOWN",
+	GRAB_PULLING_HIGH:                  "GRAB_PULLING_HIGH",
+	GRABBED_WAIT_HIGH:                  "GRABBED_WAIT_HIGH",
+	PUMMELED_HIGH:                      "PUMMELED_HIGH",
+	GRAB_PULL:                          "GRAB_PULL",
+	GRABBED:                            "GRABBED",
+	GRAB_PUMMELED:                      "GRAB_PUMMELED",
+	GRAB_ESCAPE:                        "GRAB_ESCAPE",
+	ROLL_FORWARD:                       "ROLL_FORWARD",
+	ROLL_BACKWARD:                      "ROLL_BACKWARD",
+	SPOTDODGE:                          "SPOTDODGE",
+	AIRDODGE:                           "AIRDODGE",
+	THROWN_FORWARD:                     "THROWN_FORWARD",
+	THROWN_BACK:                        "THROWN_BACK",
+	THROWN_UP:                          "THROWN_UP",
+	THROWN_DOWN:                        "THROWN_DOWN",
+	THROWN_DOWN_2:                      "THROWN_DOWN_2",
+	PLATFORM_DROP:                      "PLATFORM_DROP",
+	EDGE_TEETERING_START:               "EDGE_TEETERING_START",
+	EDGE_TEETERING:                     "EDGE_TEETERING",
+	BOUNCE_WALL:                        "BOUNCE_WALL",
+	BOUNCE_CEILING:                     "BOUNCE_CEILING",
+	BUMP_WALL:                          "BUMP_WALL",
+	BUMP_CIELING:                       "BUMP_CIELING",
+	SLIDING_OFF_EDGE:                   "SLIDING_OFF_EDGE",
+	EDGE_CATCHING:                      "EDGE_CATCHING",
+	EDGE_HANGING:                       "EDGE_HANGING",
+	EDGE_GETUP_SLOW:                    "EDGE_GETUP_SLOW",
+	EDGE_GETUP_QUICK:                   "EDGE_GETUP_QUICK",
+	EDGE_ATTACK_SLOW:                   "EDGE_ATTACK_SLOW",
+	EDGE_ATTACK_QUICK:                  "EDGE_ATTACK_QUICK",
+	EDGE_ROLL_SLOW:                     "EDGE_ROLL_SLOW",
+	EDGE_ROLL_QUICK:                    "EDGE_ROLL_QUICK",
+	EDGE_JUMP_1_SLOW:                   "EDGE_JUMP_1_SLOW",
+	EDGE_JUMP_2_SLOW:                   "EDGE_JUMP_2_SLOW",
+	EDGE_JUMP_1_QUICK:                  "EDGE_JUMP_1_QUICK",
+	EDGE_JUMP_2_QUICK:                  "EDGE_JUMP_2_QUICK",
+	TAUNT_RIGHT:                        "TAUNT_RIGHT",
+	TAUNT_LEFT:                         "TAUNT_LEFT",
+	ENTRY:                              "ENTRY",
+	ENTRY_START:                        "ENTRY_START",
+	ENTRY_END:                          "ENTRY_END",
+	LASER_GUN_PULL:                     "LASER_GUN_PULL",
+	NEUTRAL_B_CHARGING:                 "NEUTRAL_B_CHARGING",
+	NEUTRAL_B_ATTACKING:                "NEUTRAL_B_ATTACKING",
+	NEUTRAL_B_FULL_CHARGE:              "NEUTRAL_B_FULL_CHARGE",
+	WAIT_ITEM:                          "WAIT_ITEM",
+	NEUTRAL_B_CHARGING_AIR:             "NEUTRAL_B_CHARGING_AIR",
+	NEUTRAL_B_ATTACKING_AIR:            "NEUTRAL_B_ATTACKING_AIR",
+	NEUTRAL_B_FULL_CHARGE_AIR:          "NEUTRAL_B_FULL_CHARGE_AIR",
+	//SWORD_DANCE_1:                      "SWORD_DANCE_1",
+	//SWORD_DANCE_2_HIGH:                 "SWORD_DANCE_2_HIGH",
+	//SWORD_DANCE_2_MID:                  "SWORD_DANCE_2_MID",
+	//SWORD_DANCE_3_HIGH:                 "SWORD_DANCE_3_HIGH",
+	//SWORD_DANCE_3_MID:                  "SWORD_DANCE_3_MID",
+	//SWORD_DANCE_3_LOW:                  "SWORD_DANCE_3_LOW",
+	//SWORD_DANCE_4_HIGH:                 "SWORD_DANCE_4_HIGH",
+	//SWORD_DANCE_4_MID:                  "SWORD_DANCE_4_MID",
+	//SWORD_DANCE_4_LOW:                  "SWORD_DANCE_4_LOW",
+	//SWORD_DANCE_1_AIR:                  "SWORD_DANCE_1_AIR",
+	//SWORD_DANCE_2_HIGH_AIR:             "SWORD_DANCE_2_HIGH_AIR",
+	//SWORD_DANCE_2_MID_AIR:              "SWORD_DANCE_2_MID_AIR",
+	//SWORD_DANCE_3_HIGH_AIR:             "SWORD_DANCE_3_HIGH_AIR",
+	//SWORD_DANCE_3_MID_AIR:              "SWORD_DANCE_3_MID_AIR",
+	//SWORD_DANCE_3_LOW_AIR:              "SWORD_DANCE_3_LOW_AIR",
+	//SWORD_DANCE_4_HIGH_AIR:             "SWORD_DANCE_4_HIGH_AIR",
+	//SWORD_DANCE_4_MID_AIR:              "SWORD_DANCE_4_MID_AIR",
+	//SWORD_DANCE_4_LOW_AIR:              "SWORD_DANCE_4_LOW_AIR",
+	FOX_ILLUSION_START:     "FOX_ILLUSION_START",
+	FOX_ILLUSION:           "FOX_ILLUSION",
+	FOX_ILLUSION_SHORTENED: "FOX_ILLUSION_SHORTENED",
+	FIREFOX_WAIT_GROUND:    "FIREFOX_WAIT_GROUND",
+	FIREFOX_WAIT_AIR:       "FIREFOX_WAIT_AIR",
+	FIREFOX_GROUND:         "FIREFOX_GROUND",
+	FIREFOX_AIR:            "FIREFOX_AIR",
+	DOWN_B_GROUND_START:    "DOWN_B_GROUND_START",
+	DOWN_B_GROUND:          "DOWN_B_GROUND",
+	SHINE_TURN:             "SHINE_TURN",
+	DOWN_B_STUN:            "DOWN_B_STUN",
+	DOWN_B_AIR:             "DOWN_B_AIR",
+	UP_B_GROUND:            "UP_B_GROUND",
+	SHINE_RELEASE_AIR:      "SHINE_RELEASE_AIR",
+	//UP_B_AIR:               "UP_B_AIR",
+	MARTH_COUNTER:         "MARTH_COUNTER",
+	PARASOL_FALLING:       "PARASOL_FALLING",
+	MARTH_COUNTER_FALLING: "MARTH_COUNTER_FALLING",
+	//NESS_SHEILD_START:      "NESS_SHEILD_START",
+	NESS_SHEILD:         "NESS_SHEILD",
+	NESS_SHEILD_AIR:     "NESS_SHEILD_AIR",
+	NESS_SHEILD_AIR_END: "NESS_SHEILD_AIR_END",
+	UNKNOWN_ANIMATION:   "UNKNOWN_ANIMATION",
+}
