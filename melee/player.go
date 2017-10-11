@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// indices for PlayerContainer
 const (
 	STAGE_INFO int = iota
 	PLAYER1
@@ -53,25 +54,35 @@ func (p *Player) SetUint(state StateID, val uint32) {
 	p.Values[state] = val
 	p.valuesMutex.Unlock()
 }
-func (p *Player) SetStage(state StateID, val Stage) {
+func (p *Player) SetStage(val uint32) {
 	p.valuesMutex.Lock()
-	p.Values[state] = Stage(val)
+	p.Values[STAGE] = Stage(val)
 	p.valuesMutex.Unlock()
 }
 
-func (p *Player) SetMenuState(state StateID, val MenuState) {
+func (p *Player) SetMenuState(val uint32) {
 	p.valuesMutex.Lock()
-	p.Values[state] = MenuState(val)
+	p.Values[MENU_STATE] = MenuState(val)
 	p.valuesMutex.Unlock()
 }
-func (p *Player) SetCharacter(state StateID, val Character) {
+func (p *Player) SetCharacter(val uint32) {
 	p.valuesMutex.Lock()
-	p.Values[state] = Character(val)
+	p.Values[CHARACTER] = Character(val)
 	p.valuesMutex.Unlock()
 }
-func (p *Player) SetAction(state StateID, val Action) {
+func (p *Player) SetAction(val uint32) {
 	p.valuesMutex.Lock()
-	p.Values[state] = Action(val)
+	p.Values[ACTION] = Action(val)
+	p.valuesMutex.Unlock()
+}
+func (p *Player) SetController(val uint32) {
+	p.valuesMutex.Lock()
+	p.Values[CONTROLLER_DATA] = ControllerBits(uint32(val))
+	p.valuesMutex.Unlock()
+}
+func (p *Player) SetControllerPrevious(val uint32) {
+	p.valuesMutex.Lock()
+	p.Values[CONTROLLER_DATA_PREVIOUS] = ControllerBits(uint32(val))
 	p.valuesMutex.Unlock()
 }
 
@@ -126,6 +137,30 @@ func (p *Player) GetCharacter() (ret Character, err error) {
 	} else {
 		ret = UNKNOWN_CHARACTER
 		err = errors.New("Cannot assert the interface at the CHARACTER index to a Character. Invalid assignment?")
+	}
+	p.valuesMutex.Unlock()
+
+	return
+}
+
+func (p *Player) GetController() (ret ControllerBits) {
+	p.valuesMutex.Lock()
+	if val, ok := p.Values[CONTROLLER_DATA].(ControllerBits); ok {
+		ret = ControllerBits(val)
+	} else {
+		ret = ControllerBits(0)
+	}
+	p.valuesMutex.Unlock()
+
+	return
+}
+
+func (p *Player) GetControllerPrevious() (ret ControllerBits) {
+	p.valuesMutex.Lock()
+	if val, ok := p.Values[CONTROLLER_DATA_PREVIOUS].(ControllerBits); ok {
+		ret = ControllerBits(val)
+	} else {
+		ret = ControllerBits(0)
 	}
 	p.valuesMutex.Unlock()
 
