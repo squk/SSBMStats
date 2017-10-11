@@ -5,8 +5,6 @@ import (
 	"log"
 	"os"
 	"time"
-
-	ui "github.com/gizak/termui"
 )
 
 var Dolphin *DolphinManager
@@ -26,22 +24,6 @@ func init() {
 	CUI = NewConsoleUI()
 	GameState = NewGameStateManager()
 	FWriter = NewFrameWriter()
-
-	ui.Handle("/sys/kbd/q", func(ui.Event) {
-		// press q to quit
-		(*GameState.Socket).Close()
-		FWriter.Close()
-		Dolphin.StopLoop()
-		ui.StopLoop()
-		f.Close()
-	})
-
-	ui.Handle("/sys/kbd/<left>", func(ui.Event) {
-		Dolphin.DecreasePort()
-	})
-	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
-		Dolphin.IncreasePort()
-	})
 
 	go func() {
 		for Dolphin.RUNNING {
