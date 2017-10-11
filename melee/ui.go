@@ -1,6 +1,8 @@
 package melee
 
 import (
+	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -16,8 +18,23 @@ type ConsoleUI struct {
 func NewConsoleUI() *ConsoleUI {
 	err := ui.Init()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
+
+	ui.Handle("/sys/kbd/q", func(ui.Event) {
+		// press q to quit
+		(*GameState.Socket).Close()
+		FWriter.Close()
+		Dolphin.StopLoop()
+		ui.StopLoop()
+	})
+
+	ui.Handle("/sys/kbd/<left>", func(ui.Event) {
+		Dolphin.DecreasePort()
+	})
+	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
+		Dolphin.IncreasePort()
+	})
 
 	return &ConsoleUI{[]string{" ", " ", " "}, 0, 0, 0}
 }
@@ -63,7 +80,7 @@ func (c *ConsoleUI) DrawFrame() {
 	c.DrawStage()
 }
 
-var STAGE_W int = 26
+var STAGE_W int = 20
 var STAGE_H int = 3
 
 func (c *ConsoleUI) DrawStage() {
@@ -87,7 +104,7 @@ func (c *ConsoleUI) DrawStage() {
 	c.DrawMenuState()
 }
 
-var MENU_STATE_W int = 20
+var MENU_STATE_W int = 16
 var MENU_STATE_H int = 3
 
 func (c *ConsoleUI) DrawMenuState() {
@@ -107,6 +124,30 @@ func (c *ConsoleUI) DrawMenuState() {
 	menustate.BorderFg = ui.ColorRed
 	menustate.BorderLabelFg = ui.ColorCyan
 	ui.Render(menustate)
+
+	c.DrawAPM()
+}
+
+var APM_W int = 10
+var APM_H int = 3
+
+func (c *ConsoleUI) DrawAPM() {
+	APM := ui.NewPar(fmt.Sprintf("%d", GameState.CalculateAPM()))
+
+	APM.X = c.CurrentX
+	c.AdjustY(-1 * STAGE_H) // want at same Y position as Stage window
+	APM.Y = c.CurrentY
+
+	APM.Width = APM_W
+	c.AdjustX(APM_W)
+	APM.Height = APM_H
+	c.AdjustY(APM_H)
+
+	APM.TextFgColor = ui.ColorWhite
+	APM.BorderLabel = "APM"
+	APM.BorderFg = ui.ColorRed
+	APM.BorderLabelFg = ui.ColorCyan
+	ui.Render(APM)
 
 	c.DrawPlayerTable()
 }
@@ -185,8 +226,8 @@ func (c *ConsoleUI) DrawLog() {
 	log.Width = LOG_W
 	log.TextFgColor = ui.ColorWhite
 	log.BorderLabel = "MATCH SUMMARY"
-	log.BorderFg = ui.ColorRed
-	log.BorderLabelFg = ui.ColorCyan
+	log.BorderFg = ui.ColorCyan
+	log.BorderLabelFg = ui.ColorGreen
 
 	ui.Render(log)
 	c.DrawHelp()
