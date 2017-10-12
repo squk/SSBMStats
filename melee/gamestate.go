@@ -2,21 +2,8 @@ package melee
 
 import (
 	"encoding/binary"
-	"encoding/hex"
-	"fmt"
-	"log"
 	"math"
-	"net"
-	"path/filepath"
-	"strings"
-	"sync"
-	"syscall"
 )
-
-type DolphinTuple struct {
-	Address string
-	Value   []byte
-}
 
 type GameStateManager struct {
 	Players     PlayerContainer
@@ -27,72 +14,23 @@ type GameStateManager struct {
 	StageCursorY float32
 	Ready bool
 
-	Socket       *net.UnixConn
-	SocketBuffer []byte
-	SocketMutex  sync.Mutex
-
-	MemoryMap    MemoryMap
-	MemoryUpdate chan DolphinTuple
-	APMStore     [120]int
+	MemoryMap MemoryMap
+	APMStore  [120]int
+	SelfPort  int
 }
 
 func NewGameStateManager() *GameStateManager {
 	state := GameStateManager{
-		Stage:        FINAL_DESTINATION,
-		MenuState:    IN_GAME,
-		SocketBuffer: make([]byte, 9096),
-		SocketMutex:  sync.Mutex{},
-		MemoryMap:    GetMemoryMap(),
-		MemoryUpdate: make(chan DolphinTuple),
+		Stage:     FINAL_DESTINATION,
+		MenuState: IN_GAME,
+		MemoryMap: GetMemoryMap(),
 	}
-
-	state.BindSocket()
 
 	for i := 0; i < 9; i++ {
 		state.Players[i] = NewPlayer()
 	}
 
 	return &state
-}
-
-func (g *GameStateManager) ReadSocket() {
-	c := g.Socket
-	buf := g.SocketBuffer
-
-	g.SocketMutex.Lock()
-	n, err := (*c).Read(buf[:])
-	g.SocketMutex.Unlock()
-
-	if err != nil {
-		c.Close()
-		log.Fatalln(err)
-		return
-	}
-
-	s := strings.Split(string(buf[0:n]), "\n")
-	padded := fmt.Sprintf("%08s", strings.Replace(s[1], "\x00", "", -1))
-	decoded, err := hex.DecodeString(padded)
-
-	if err != nil {
-		c.Close()
-		log.Fatalln(err)
-		return
-	} else {
-		g.MemoryUpdate <- DolphinTuple{s[0], decoded}
-	}
-}
-
-func (g *GameStateManager) BindSocket() {
-	p := filepath.Join(Dolphin.MemoryPath, "MemoryWatcher")
-
-	syscall.Unlink(p)
-	c, err := net.ListenUnixgram("unixgram", &net.UnixAddr{p, "unixgram"})
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	g.Socket = c
 }
 
 var apmIndex int = 0
@@ -108,10 +46,10 @@ func (g *GameStateManager) CalculateAPM() int {
 
 func (g *GameStateManager) Update() {
 	go func() {
-		for Dolphin.RUNNING {
-			go g.ReadSocket()
+		for Dolphin.Looping {
+			go Dolphin.ReadSocket()
 
-			m := <-g.MemoryUpdate
+			m := <-Dolphin.MemoryUpdate
 
 			playerIndex := g.MemoryMap[m.Address].PlayerIndex
 			state := g.MemoryMap[m.Address].StateID
@@ -179,7 +117,7 @@ func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []
 	} else if state == CHARACTER {
 		g.Players[index].SetCharacter(bigEndianInt >> 24)
 
-		if index == Dolphin.SelfPort {
+		if index == g.SelfPort {
 			FWriter.Match.SelfCharacter = g.Players[index].GetCharacterString()
 		}
 	} else if state == ACTION {
@@ -218,4 +156,28 @@ func StateSliceContains(s []StateID, f StateID) bool {
 		}
 	}
 	return false
+}
+
+func (g *GameStateManager) IncreasePort() {
+	g.SelfPort++
+
+	if g.SelfPort > 4 {
+		g.SelfPort = 1
+	}
+
+	FWriter.Match.SelfCharacter = GameState.Players[g.SelfPort].GetCharacterString()
+}
+
+func (g *GameStateManager) DecreasePort() {
+	g.SelfPort--
+
+	if g.SelfPort < 1 {
+		g.SelfPort = 4
+	}
+
+	FWriter.Match.SelfCharacter = GameState.Players[g.SelfPort].GetCharacterString()
+}
+
+func (g *GameStateManager) StopLoop() {
+	Dolphin.Looping = false
 }

@@ -57,9 +57,8 @@ func (c *ConsoleUI) AdjustY(y int) {
 func (c *ConsoleUI) DrawDefault() {
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
 		// press q to quit
-		(*GameState.Socket).Close()
 		FWriter.Close()
-		Dolphin.StopLoop()
+		GameState.StopLoop()
 		ui.StopLoop()
 	})
 	ui.Handle("/sys/kbd/v", func(ui.Event) {
@@ -67,10 +66,10 @@ func (c *ConsoleUI) DrawDefault() {
 		c.UIState = MATCH_VIEW
 	})
 	ui.Handle("/sys/kbd/<left>", func(ui.Event) {
-		Dolphin.DecreasePort()
+		GameState.DecreasePort()
 	})
 	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
-		Dolphin.IncreasePort()
+		GameState.IncreasePort()
 	})
 
 	c.DrawFrameBox()
@@ -202,7 +201,7 @@ func (c *ConsoleUI) DrawPlayerTableBox() {
 		[]string{"[Percent](fg-green)"},
 		//[]string{"Action"},
 	}
-	rows1[0][Dolphin.SelfPort] = "[" + rows1[0][Dolphin.SelfPort] + "](fg-red)"
+	rows1[0][GameState.SelfPort] = "[" + rows1[0][GameState.SelfPort] + "](fg-red)"
 
 	rows1[1] = append(rows1[1][0:1], character...)
 	rows1[2] = append(rows1[2][0:1], stock...)

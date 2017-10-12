@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	melee "./melee"
+	melee "github.com/ctnieves/hopelessstats/melee"
 	ui "github.com/gizak/termui"
 )
 

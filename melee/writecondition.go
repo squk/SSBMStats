@@ -59,11 +59,11 @@ func L_CANCEL_PASS(f Frame) (flag WriteFlag, data DiskFrame) {
 	flag = INDETERMINATE
 
 	if !f.Empty() {
-		action, _ := f.Players[Dolphin.SelfPort].GetAction()
+		action, _ := f.Players[GameState.SelfPort].GetAction()
 
 		if !L_CANCEL_OPPORTUNE {
-			animation_speed, _ := f.Players[Dolphin.SelfPort].GetFloat(SPEED_ANIMATION)
-			char, _ := f.Players[Dolphin.SelfPort].GetCharacter()
+			animation_speed, _ := f.Players[GameState.SelfPort].GetFloat(SPEED_ANIMATION)
+			char, _ := f.Players[GameState.SelfPort].GetCharacter()
 
 			if CAN_L_CANCEL(action) {
 				L_CANCEL_OPPORTUNE = true
