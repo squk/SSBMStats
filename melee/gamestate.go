@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-type GameStateManager struct {
+type MeleeState struct {
 	Players     PlayerContainer
 	FrameNumber uint32
 	Stage       Stage
@@ -16,11 +16,12 @@ type GameStateManager struct {
 
 	MemoryMap MemoryMap
 	APMStore  [120]int
-	SelfPort  int
+
+	SelfPort int
 }
 
-func NewGameStateManager() *GameStateManager {
-	state := GameStateManager{
+func NewMeleeState() *MeleeState {
+	state := MeleeState{
 		Stage:     FINAL_DESTINATION,
 		MenuState: IN_GAME,
 		MemoryMap: GetMemoryMap(),
@@ -33,7 +34,7 @@ func NewGameStateManager() *GameStateManager {
 	return &state
 }
 
-func (g *GameStateManager) Update() {
+func (g *MeleeState) Update() {
 	go func() {
 		for Dolphin.Looping {
 			go Dolphin.ReadSocket()
@@ -52,16 +53,7 @@ func (g *GameStateManager) Update() {
 	}()
 }
 
-func (g *GameStateManager) OnFrame() {
-	player_container := g.Players
-
-	frame := NewFrame(player_container)
-	if g.MenuState == IN_GAME {
-		go FWriter.LogFrame(frame)
-	}
-}
-
-func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []byte) {
+func (g *MeleeState) AssignPlayerValues(index int, state StateID, value []byte) {
 	littleEndianInt := binary.LittleEndian.Uint32(value)
 	bigEndianInt := binary.BigEndian.Uint32(value)
 	floatVal := math.Float32frombits(binary.BigEndian.Uint32(value))
@@ -116,14 +108,14 @@ func (g *GameStateManager) AssignPlayerValues(index int, state StateID, value []
 	}
 }
 
-func (g *GameStateManager) SetMenuState(state MenuState) {
+func (g *MeleeState) SetMenuState(state MenuState) {
 	if state == CHARACTER_SELECT || state == POSTGAME_SCORES {
 		FWriter.Flush()
 	}
 	g.MenuState = state
 }
 
-func (g *GameStateManager) SetStage(state Stage) {
+func (g *MeleeState) SetStage(state Stage) {
 	g.Stage = state
 	FWriter.Match.Stage = GetStageName(state)
 }
@@ -137,7 +129,7 @@ func StateSliceContains(s []StateID, f StateID) bool {
 	return false
 }
 
-func (g *GameStateManager) IncreasePort() {
+func (g *MeleeState) IncreasePort() {
 	g.SelfPort++
 
 	if g.SelfPort > 4 {
@@ -147,7 +139,7 @@ func (g *GameStateManager) IncreasePort() {
 	FWriter.Match.SelfCharacter = GameState.Players[g.SelfPort].GetCharacterString()
 }
 
-func (g *GameStateManager) DecreasePort() {
+func (g *MeleeState) DecreasePort() {
 	g.SelfPort--
 
 	if g.SelfPort < 1 {
@@ -157,6 +149,6 @@ func (g *GameStateManager) DecreasePort() {
 	FWriter.Match.SelfCharacter = GameState.Players[g.SelfPort].GetCharacterString()
 }
 
-func (g *GameStateManager) StopLoop() {
+func (g *MeleeState) StopLoop() {
 	Dolphin.Looping = false
 }

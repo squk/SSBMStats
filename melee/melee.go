@@ -10,7 +10,7 @@ import (
 
 var Dolphin *golphin.Golphin
 var CUI *ConsoleUI
-var GameState *GameStateManager
+var GameState *MeleeState
 var FWriter *FrameWriter
 
 func check(err error) {
@@ -41,7 +41,7 @@ func Init() (err error) {
 	Dolphin.WriteLocations()
 
 	CUI = NewConsoleUI()
-	GameState = NewGameStateManager()
+	GameState = NewMeleeState()
 	FWriter = NewFrameWriter()
 
 	go func() {
