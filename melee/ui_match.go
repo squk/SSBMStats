@@ -92,7 +92,7 @@ func (c *ConsoleUI) DrawMatchData() {
 	ui.Render(stage)
 
 	character := ui.NewPar(selected_data.SelfCharacter + " vs " +
-		selected_data.OpponentCharacter)
+		strings.Join(selected_data.OpponentCharacters, ", "))
 	character.X = 20
 	character.Y = c.CurrentY
 

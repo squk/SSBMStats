@@ -32,7 +32,7 @@ const (
 	UNKNOWN_CHARACTER           = 0xff
 )
 
-var CharacterNames = map[Character]string{
+var CHARACTER_NAMES = map[Character]string{
 	DOC:               "DOC",
 	MARIO:             "MARIO",
 	LUIGI:             "LUIGI",

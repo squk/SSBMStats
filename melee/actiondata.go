@@ -1,9 +1,9 @@
 package melee
 
 type ActionData struct {
-	Character   Character
-	Action      Action
-	ZeroIndexed bool
+	Character    Character
+	PlayerAction PlayerAction
+	ZeroIndexed  bool
 }
 
 func GetActionData() []ActionData {

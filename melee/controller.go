@@ -2,6 +2,9 @@ package melee
 
 import "math/bits"
 
+type Port byte
+type PortList []Port
+
 type ControllerBits uint32
 
 // Controller Data Bit Flags: xxxx xxxx UDLR UDLR xxxS YXBA xLRZ UDRL

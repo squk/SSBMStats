@@ -70,9 +70,9 @@ func (p *Player) SetCharacter(val uint32) {
 	p.Values[CHARACTER] = Character(val)
 	p.valuesMutex.Unlock()
 }
-func (p *Player) SetAction(val uint32) {
+func (p *Player) SetPlayerAction(val uint32) {
 	p.valuesMutex.Lock()
-	p.Values[ACTION] = Action(val)
+	p.Values[PLAYER_ACTION] = PlayerAction(val)
 	p.valuesMutex.Unlock()
 }
 func (p *Player) SetController(val uint32) {
@@ -115,14 +115,14 @@ func (p *Player) GetUint(state StateID) (ret uint32, err error) {
 	return
 }
 
-func (p *Player) GetAction() (ret Action, err error) {
+func (p *Player) GetPlayerAction() (ret PlayerAction, err error) {
 	p.valuesMutex.Lock()
-	if val, ok := p.Values[ACTION].(Action); ok {
+	if val, ok := p.Values[PLAYER_ACTION].(PlayerAction); ok {
 		ret = val
 		err = nil
 	} else {
 		ret = UNKNOWN_ANIMATION
-		err = errors.New("Cannot assert the interface at the ACTION index to an Action. Invalid assignment?")
+		err = errors.New("Cannot assert the interface at the PLAYER_ACTION index to an PlayerAction. Invalid assignment?")
 	}
 	p.valuesMutex.Unlock()
 
@@ -169,5 +169,5 @@ func (p *Player) GetControllerPrevious() (ret ControllerBits) {
 
 func (p *Player) GetCharacterString() string {
 	c, _ := p.GetCharacter()
-	return CharacterNames[c]
+	return CHARACTER_NAMES[c]
 }

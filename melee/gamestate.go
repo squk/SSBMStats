@@ -9,7 +9,10 @@ type MeleeState struct {
 	Players     PlayerContainer
 	FrameNumber uint32
 	Stage       Stage
-	MenuState   MenuState
+
+	MenuState     MenuState
+	LastMenuState MenuState
+
 	StageCursorX,
 	StageCursorY float32
 	Ready bool
@@ -17,7 +20,8 @@ type MeleeState struct {
 	MemoryMap MemoryMap
 	APMStore  [120]int
 
-	SelfPort int
+	SelfPort      int
+	OpponentPorts []int
 }
 
 func NewMeleeState() *MeleeState {
@@ -25,6 +29,7 @@ func NewMeleeState() *MeleeState {
 		Stage:     FINAL_DESTINATION,
 		MenuState: IN_GAME,
 		MemoryMap: GetMemoryMap(),
+		SelfPort:  1,
 	}
 
 	for i := 0; i < 9; i++ {
@@ -72,7 +77,7 @@ func (g *MeleeState) AssignPlayerValues(index int, state StateID, value []byte) 
 	}
 
 	bigEndianIntIDs := []StateID{
-		READY_TO_START, CONTROLLER_STATUS, ACTION, CHARACTER, CONTROLLER_DATA,
+		READY_TO_START, CONTROLLER_STATUS, PLAYER_ACTION, CHARACTER, CONTROLLER_DATA,
 	}
 
 	if state == FRAME {
@@ -87,12 +92,9 @@ func (g *MeleeState) AssignPlayerValues(index int, state StateID, value []byte) 
 		}
 	} else if state == CHARACTER {
 		g.Players[index].SetCharacter(bigEndianInt >> 24)
-
-		if index == g.SelfPort {
-			FWriter.Match.SelfCharacter = g.Players[index].GetCharacterString()
-		}
-	} else if state == ACTION {
-		g.Players[index].SetAction(bigEndianInt)
+		g.OnCharacter()
+	} else if state == PLAYER_ACTION {
+		g.Players[index].SetPlayerAction(bigEndianInt)
 	} else if state == PERCENT {
 		g.Players[index].SetUint(PERCENT, uint32(value[1]))
 	} else if state == CONTROLLER_DATA {
@@ -117,7 +119,7 @@ func (g *MeleeState) SetMenuState(state MenuState) {
 
 func (g *MeleeState) SetStage(state Stage) {
 	g.Stage = state
-	FWriter.Match.Stage = GetStageName(state)
+	FWriter.Match.Stage = STAGE_NAMES[state]
 }
 
 func StateSliceContains(s []StateID, f StateID) bool {
@@ -135,8 +137,6 @@ func (g *MeleeState) IncreasePort() {
 	if g.SelfPort > 4 {
 		g.SelfPort = 1
 	}
-
-	FWriter.Match.SelfCharacter = GameState.Players[g.SelfPort].GetCharacterString()
 }
 
 func (g *MeleeState) DecreasePort() {
@@ -145,8 +145,6 @@ func (g *MeleeState) DecreasePort() {
 	if g.SelfPort < 1 {
 		g.SelfPort = 4
 	}
-
-	FWriter.Match.SelfCharacter = GameState.Players[g.SelfPort].GetCharacterString()
 }
 
 func (g *MeleeState) StopLoop() {

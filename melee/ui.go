@@ -1,7 +1,6 @@
 package melee
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -104,7 +103,7 @@ var STAGE_W int = 20
 var STAGE_H int = 3
 
 func (c *ConsoleUI) DrawStageBox() {
-	stage := ui.NewPar(GetStageName(GameState.Stage))
+	stage := ui.NewPar(STAGE_NAMES[GameState.Stage])
 
 	stage.X = c.CurrentX
 	c.AdjustY(-1 * FRAME_H) // want at same Y position as Frame window
@@ -152,7 +151,7 @@ var APM_W int = 10
 var APM_H int = 3
 
 func (c *ConsoleUI) DrawAPMBox() {
-	APM := ui.NewPar(fmt.Sprintf("%d", GameState.CalculateAPM()))
+	APM := ui.NewPar("0") // placeholder
 
 	APM.X = c.CurrentX
 	c.AdjustY(-1 * STAGE_H) // want at same Y position as Stage window
@@ -179,7 +178,7 @@ func (c *ConsoleUI) DrawPlayerTableBox() {
 	c.CurrentX = 0
 	percent := make([]string, 4)
 	stock := make([]string, 4)
-	//action := make([]Action, 4)
+	//action := make([]PlayerAction, 4)
 
 	for i := 1; i < 5; i++ {
 		char, _ := GameState.Players[i].GetCharacter()
@@ -191,7 +190,7 @@ func (c *ConsoleUI) DrawPlayerTableBox() {
 
 		stock[i-1] = strconv.FormatUint(uint64(s), 10)
 		percent[i-1] = strconv.FormatUint(uint64(p), 10)
-		//action[i-1], _ = GameState.Players[i].GetAction()
+		//action[i-1], _ = GameState.Players[i].GetPlayerAction()
 	}
 
 	rows1 := [][]string{
@@ -199,9 +198,12 @@ func (c *ConsoleUI) DrawPlayerTableBox() {
 		[]string{"[Character](fg-green)"},
 		[]string{"[Stocks](fg-green)"},
 		[]string{"[Percent](fg-green)"},
-		//[]string{"Action"},
+		//[]string{"PlayerAction"},
 	}
 	rows1[0][GameState.SelfPort] = "[" + rows1[0][GameState.SelfPort] + "](fg-red)"
+	for _, p := range GameState.OpponentPorts {
+		rows1[0][GameState.SelfPort] = "[" + rows1[0][p] + "](fg-cyan)"
+	}
 
 	rows1[1] = append(rows1[1][0:1], character...)
 	rows1[2] = append(rows1[2][0:1], stock...)

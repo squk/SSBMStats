@@ -13,29 +13,15 @@ const (
 	RANDOM_STAGE             = 0x1D
 )
 
-func GetStageName(stage Stage) string {
-	switch stage {
-	case NO_STAGE:
-		return "NO_STAGE"
-	case FINAL_DESTINATION:
-		return "FINAL_DESTINATION"
-	case BATTLEFIELD:
-		return "BATTLEFIELD"
-	case POKEMON_STADIUM:
-		return "POKEMON_STADIUM"
-	case DREAMLAND:
-		return "DREAMLAND"
-	case FOUNTAIN_OF_DREAMS:
-		return "FOUNTAIN_OF_DREAMS"
-	case YOSHIS_STORY:
-		return "YOSHIS_STORY"
-	case RANDOM_STAGE:
-		return "RANDOM_STAGE"
-
-	// TODO: Other stages? Do we care?
-	default:
-		return ""
-	}
+var STAGE_NAMES = map[Stage]string{
+	NO_STAGE:           "NO_STAGE",
+	FINAL_DESTINATION:  "FINAL_DESTINATION",
+	BATTLEFIELD:        "BATTLEFIELD",
+	POKEMON_STADIUM:    "POKEMON_STADIUM",
+	DREAMLAND:          "DREAMLAND",
+	FOUNTAIN_OF_DREAMS: "FOUNTAIN_OF_DREAMS",
+	YOSHIS_STORY:       "YOSHIS_STORY",
+	RANDOM_STAGE:       "RANDOM_STAGE",
 }
 
 // Get the X coordinate of the edge of the stage, approaching from

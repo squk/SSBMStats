@@ -20,18 +20,18 @@ const (
 	BUTTON_C    = "C"
 )
 
-type Action uint32
+type PlayerAction uint32
 
 const (
-	DEAD_DOWN              Action = 0x0
-	DEAD_LEFT                     = 0x1
-	DEAD_RIGHT                    = 0x2
-	DEAD_FLY_STAR                 = 0x4
-	DEAD_FLY                      = 0x6 // When you have been hit upwards and are dead
-	DEAD_FLY_SPLATTER             = 0x7 // Hit upwards and have splattered on the camera
-	DEAD_FLY_SPLATTER_FLAT        = 0x8 // Hit upwards and have splattered on the camera
-	ON_HALO_DESCENT               = 0xc
-	ON_HALO_WAIT                  = 0x0d
+	DEAD_DOWN              PlayerAction = 0x0
+	DEAD_LEFT                           = 0x1
+	DEAD_RIGHT                          = 0x2
+	DEAD_FLY_STAR                       = 0x4
+	DEAD_FLY                            = 0x6 // When you have been hit upwards and are dead
+	DEAD_FLY_SPLATTER                   = 0x7 // Hit upwards and have splattered on the camera
+	DEAD_FLY_SPLATTER_FLAT              = 0x8 // Hit upwards and have splattered on the camera
+	ON_HALO_DESCENT                     = 0xc
+	ON_HALO_WAIT                        = 0x0d
 
 	STANDING    = 0x0e
 	WALK_SLOW   = 0x0f
@@ -286,7 +286,7 @@ const (
 
 	UP_B_GROUND       = 0x16f
 	SHINE_RELEASE_AIR = 0x170
-	//UP_B_AIR          = 0x170 // The upswing of the UP-B. (At least for marth)
+	UP_B_AIR          = 0x170 // The upswing of the UP-B. (At least for marth)
 
 	MARTH_COUNTER         = 0x171
 	PARASOL_FALLING       = 0x172
@@ -300,7 +300,7 @@ const (
 	UNKNOWN_ANIMATION = 0xffff
 )
 
-var ACTION_NAMES = map[Action]string{
+var ACTION_NAMES = map[PlayerAction]string{
 	DEAD_DOWN:                          "DEAD_DOWN",
 	DEAD_LEFT:                          "DEAD_LEFT",
 	DEAD_RIGHT:                         "DEAD_RIGHT",
@@ -538,14 +538,151 @@ var ACTION_NAMES = map[Action]string{
 	DOWN_B_STUN:            "DOWN_B_STUN",
 	DOWN_B_AIR:             "DOWN_B_AIR",
 	UP_B_GROUND:            "UP_B_GROUND",
-	SHINE_RELEASE_AIR:      "SHINE_RELEASE_AIR",
-	//UP_B_AIR:               "UP_B_AIR",
-	MARTH_COUNTER:         "MARTH_COUNTER",
-	PARASOL_FALLING:       "PARASOL_FALLING",
-	MARTH_COUNTER_FALLING: "MARTH_COUNTER_FALLING",
+	SHINE_RELEASE_AIR:      "SHINE_RELEASE_AIR OR UP_B_AIR",
+	MARTH_COUNTER:          "MARTH_COUNTER",
+	PARASOL_FALLING:        "PARASOL_FALLING",
+	MARTH_COUNTER_FALLING:  "MARTH_COUNTER_FALLING",
 	//NESS_SHEILD_START:      "NESS_SHEILD_START",
 	NESS_SHEILD:         "NESS_SHEILD",
 	NESS_SHEILD_AIR:     "NESS_SHEILD_AIR",
 	NESS_SHEILD_AIR_END: "NESS_SHEILD_AIR_END",
 	UNKNOWN_ANIMATION:   "UNKNOWN_ANIMATION",
+}
+
+func (a PlayerAction) CanLCancel() bool {
+	return (a == UAIR_LANDING || a == BAIR_LANDING || a == NAIR_LANDING || a ==
+		DAIR_LANDING || a == FAIR_LANDING)
+}
+
+func (a PlayerAction) IsAttack() bool {
+	return (a == BAIR || a == FAIR || a == DAIR || a == NAIR || a == UAIR ||
+		a == FSMASH_HIGH || a == FSMASH_MID || a == FSMASH_MID_LOW ||
+		a == FSMASH_MID_HIGH || a == FSMASH_LOW || a == UPSMASH ||
+		a == DOWNSMASH || a == UPTILT || a == FTILT_HIGH || a == FALLING_AERIAL ||
+		a == FTILT_HIGH_MID || a == FTILT_MID || a == FTILT_LOW_MID ||
+		a == FTILT_LOW || a == UPTILT || a == NEUTRAL_ATTACK_1 ||
+		a == NEUTRAL_ATTACK_2 || a == NEUTRAL_ATTACK_3 ||
+		a == LOOPING_ATTACK_START || a == LOOPING_ATTACK_MIDDLE ||
+		a == LOOPING_ATTACK_END || a == DASH_ATTACK || a == EDGE_ATTACK_SLOW ||
+		a == EDGE_ATTACK_QUICK || a == NEUTRAL_B_ATTACKING ||
+		a == NEUTRAL_B_ATTACKING_AIR || a == GRAB || a == GRAB_RUNNING ||
+		a == DASH_ATTACK || a == THROW_FORWARD || a == THROW_BACK || a == THROW_UP ||
+		a == THROW_DOWN)
+}
+
+func (a PlayerAction) IsAttackStrict() bool {
+	return (a.IsAttack() || a == GROUND_ATTACK_UP || a == DASH_ATTACK ||
+		a == NAIR_LANDING || a == FAIR_LANDING || a == BAIR_LANDING ||
+		a == UAIR_LANDING || a == DAIR_LANDING || a == ITEM_THROW_LIGHT_FORWARD ||
+		a == ITEM_THROW_LIGHT_BACK || a == ITEM_THROW_LIGHT_HIGH ||
+		a == ITEM_THROW_LIGHT_LOW || a == ITEM_THROW_LIGHT_DASH ||
+		a == ITEM_THROW_LIGHT_DROP || a == ITEM_THROW_LIGHT_AIR_FORWARD ||
+		a == ITEM_THROW_LIGHT_AIR_BACK || a == ITEM_THROW_LIGHT_AIR_HIGH ||
+		a == ITEM_THROW_LIGHT_AIR_LOW || a == ITEM_THROW_HEAVY_FORWARD ||
+		a == ITEM_THROW_HEAVY_BACK || a == ITEM_THROW_HEAVY_HIGH ||
+		a == ITEM_THROW_HEAVY_LOW || a == ITEM_THROW_LIGHT_SMASH_FORWARD ||
+		a == ITEM_THROW_LIGHT_SMASH_BACK || a == ITEM_THROW_LIGHT_SMASH_UP ||
+		a == ITEM_THROW_LIGHT_SMASH_DOWN || a == ITEM_THROW_LIGHT_AIR_SMASH_FORWARD ||
+		a == ITEM_THROW_LIGHT_AIR_SMASH_BACK || a == ITEM_THROW_LIGHT_AIR_SMASH_HIGH ||
+		a == ITEM_THROW_LIGHT_AIR_SMASH_LOW || a == ITEM_THROW_HEAVY_AIR_SMASH_FORWARD ||
+		a == ITEM_THROW_HEAVY_AIR_SMASH_BACK || a == ITEM_THROW_HEAVY_AIR_SMASH_HIGH ||
+		a == ITEM_THROW_HEAVY_AIR_SMASH_LOW)
+}
+
+func (a PlayerAction) IsNeutral() bool {
+	return (a == STANDING || a == WALK_SLOW || a == WALK_MIDDLE || a == WALK_FAST ||
+		a == TURNING || a == TURNING_RUN || a == DASHING || a == RUNNING ||
+		a == RUN_DIRECT || a == RUN_BRAKE || a == FALLING || a == CROUCH_START ||
+		a == CROUCHING || a == CROUCH_END || a == LANDING || a == LANDING_SPECIAL ||
+		a == ITEM_PICKUP_LIGHT || a == ITEM_PICKUP_HEAVY || a == ROLL_FORWARD ||
+		a == ROLL_BACKWARD || a == SPOTDODGE || a == AIRDODGE || a == PLATFORM_DROP ||
+		a == EDGE_TEETERING_START || a == EDGE_TEETERING || a == TAUNT_RIGHT ||
+		a == TAUNT_LEFT || a == NESS_SHEILD || a == NESS_SHEILD_AIR ||
+		a == NESS_SHEILD_AIR_END || a == ON_HALO_DESCENT || a == ON_HALO_WAIT ||
+		a.IsShield() || a.IsJump())
+}
+
+// Includes lasers, neutral B charging etc.
+func (a PlayerAction) IsNeutralStrict() bool {
+	return (a.IsNeutral() || a == LASER_GUN_PULL || a == NEUTRAL_B_CHARGING ||
+		a == NEUTRAL_B_ATTACKING || a == NEUTRAL_B_FULL_CHARGE || a == NEUTRAL_B_CHARGING_AIR ||
+		a == NEUTRAL_B_ATTACKING_AIR || a == NEUTRAL_B_FULL_CHARGE_AIR)
+}
+
+func (a PlayerAction) IsEdge() bool {
+	return (a == EDGE_CATCHING || a == EDGE_HANGING || a == EDGE_GETUP_SLOW ||
+		a == EDGE_GETUP_QUICK || a == EDGE_ATTACK_SLOW || a == EDGE_ATTACK_QUICK ||
+		a == EDGE_ROLL_SLOW || a == EDGE_ROLL_QUICK || a == EDGE_JUMP_1_SLOW ||
+		a == EDGE_JUMP_2_SLOW || a == EDGE_JUMP_1_QUICK || a == EDGE_JUMP_2_QUICK)
+}
+
+func (a PlayerAction) IsTech() bool {
+	return (a == NEUTRAL_TECH || a == FORWARD_TECH || a == BACKWARD_TECH ||
+		a == WALL_TECH || a == WALL_TECH_JUMP || a == CEILING_TECH)
+}
+
+// Includes any action you could perform from a techable impact.
+func (a PlayerAction) IsTechStrict() bool {
+	return (a.IsTech() || a == TECH_MISS_UP || a == TECH_MISS_DOWN ||
+		a == LYING_GROUND_UP || a == LYING_GROUND_UP_HIT || a == GROUND_GETUP ||
+		a == GROUND_ATTACK_UP || a == GROUND_ROLL_FORWARD_UP || a == GROUND_ROLL_BACKWARD_UP ||
+		a == LYING_GROUND_DOWN || a == DAMAGE_GROUND || a == NEUTRAL_GETUP ||
+		a == GETUP_ATTACK || a == GROUND_ROLL_FORWARD_DOWN || a == GROUND_ROLL_BACKWARD_DOWN)
+}
+
+func (a PlayerAction) IsDamage() bool {
+	return (a == DAMAGE_HIGH_1 || a == DAMAGE_HIGH_2 || a == DAMAGE_HIGH_3 ||
+		a == DAMAGE_NEUTRAL_1 || a == DAMAGE_NEUTRAL_2 || a == DAMAGE_NEUTRAL_3 ||
+		a == DAMAGE_LOW_1 || a == DAMAGE_LOW_2 || a == DAMAGE_LOW_3 ||
+		a == DAMAGE_AIR_1 || a == DAMAGE_AIR_2 || a == DAMAGE_AIR_3 ||
+		a == DAMAGE_FLY_HIGH || a == DAMAGE_FLY_NEUTRAL || a == DAMAGE_FLY_LOW ||
+		a == DAMAGE_FLY_TOP || a == DAMAGE_FLY_ROLL)
+}
+
+func (a PlayerAction) IsStun() bool {
+	return (a == EDGE_CATCHING || a == LANDING_SPECIAL || a == DOWN_B_STUN ||
+		a == SHIELD_STUN)
+}
+
+func (a PlayerAction) IsShield() bool {
+	return (a == SHIELD_START || a == SHIELD || a == SHIELD_RELEASE ||
+		a == SHIELD_STUN || a == SHIELD_REFLECT)
+}
+
+func (a PlayerAction) IsIdle() bool {
+	return (a == STANDING || a == CROUCH_START || a == CROUCHING ||
+		a == CROUCH_END || a == LANDING ||
+		a.IsThrown() || a.IsShieldStrict() || a.IsDead())
+}
+
+func (a PlayerAction) IsMoving() bool {
+	return !a.IsIdle()
+}
+
+func (a PlayerAction) IsJump() bool {
+	return (a == KNEE_BEND || a == JUMPING_FORWARD || a == JUMPING_BACKWARD ||
+		a == JUMPING_ARIAL_FORWARD || a == JUMPING_ARIAL_BACKWARD)
+}
+
+// includes shield breaking(letting go of shield?)
+func (a PlayerAction) IsShieldStrict() bool {
+	return (a.IsShield() || a == SHIELD_BREAK_FLY || a == SHIELD_BREAK_FALL ||
+		a == SHIELD_BREAK_DOWN_U || a == SHIELD_BREAK_DOWN_D ||
+		a == SHIELD_BREAK_STAND_U || a == SHIELD_BREAK_STAND_D || a == SHIELD_BREAK_TEETER)
+}
+
+func (a PlayerAction) IsDead() bool {
+	return (a == DEAD_DOWN || a == DEAD_FALL || a == DEAD_LEFT ||
+		a == DEAD_RIGHT || a == DEAD_FLY_STAR || a == DEAD_FLY ||
+		a == DEAD_FLY_SPLATTER || a == DEAD_FLY_SPLATTER_FLAT)
+}
+
+func (a PlayerAction) IsGrabbed() bool {
+	return (a == GRABBED || a == GRABBED_WAIT_HIGH || a == PUMMELED_HIGH ||
+		a == GRAB_PUMMELED || a == GRAB_ESCAPE || a == GRAB_PULL)
+}
+
+func (a PlayerAction) IsThrown() bool {
+	return (a == THROWN_FORWARD || a == THROWN_BACK || a == THROWN_UP ||
+		a == THROWN_DOWN || a == THROWN_DOWN_2)
 }
