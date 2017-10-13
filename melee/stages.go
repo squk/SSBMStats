@@ -31,6 +31,8 @@ func GetStageName(stage Stage) string {
 		return "YOSHIS_STORY"
 	case RANDOM_STAGE:
 		return "RANDOM_STAGE"
+
+	// TODO: Other stages? Do we care?
 	default:
 		return ""
 	}
@@ -60,7 +62,6 @@ func EdgePosition(stage Stage) float32 {
 		return 58.907848
 	}
 
-	// TODO: Other stages? Do we care?
 	return 1000
 }
 
@@ -88,6 +89,5 @@ func EdgeGroundPosition(stage Stage) float32 {
 		return 56
 	}
 
-	// TODO: Other stages? Do we care?
 	return 1000
 }
