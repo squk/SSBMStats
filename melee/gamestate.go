@@ -33,17 +33,6 @@ func NewGameStateManager() *GameStateManager {
 	return &state
 }
 
-var apmIndex int = 0
-
-func (g *GameStateManager) CalculateAPM() int {
-	sum := 0
-	for _, n := range g.APMStore {
-		sum += n
-	}
-	// 120 frames = 2 seconds.
-	return sum
-}
-
 func (g *GameStateManager) Update() {
 	go func() {
 		for Dolphin.Looping {
@@ -64,16 +53,6 @@ func (g *GameStateManager) Update() {
 }
 
 func (g *GameStateManager) OnFrame() {
-	//if apmIndex >= 120 {
-	////log.Println(g.APMStore)
-	//apmIndex = 0
-	//}
-	//if g.Players[Dolphin.SelfPort].GetController() != g.Players[Dolphin.SelfPort].GetControllerPrevious() {
-	//g.APMStore[apmIndex] = g.Players[Dolphin.SelfPort].GetController().Count()
-	//}
-	//log.Printf("%x %x\n", g.Players[Dolphin.SelfPort].GetController(), g.Players[Dolphin.SelfPort].GetControllerPrevious())
-	//apmIndex++
-
 	player_container := g.Players
 
 	frame := NewFrame(player_container)
