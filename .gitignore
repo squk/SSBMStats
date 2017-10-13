@@ -1,1 +1,18 @@
-Session.vim
+# ignore any vim files
+*.vim
+
+# ignore builds/binaries
+main
+**/*.app
+**/*.exe
+
+#ignore logs
+**/log.txt
+
+#ignore any temps
+**/.tmp
+
+#ignore any saved stats
+stats/
+**/*.json
+
