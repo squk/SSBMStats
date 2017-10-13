@@ -111,12 +111,17 @@ type FrameWriter struct {
 	Match       Match
 }
 
+//TODO: dynamic/changeable opponent ports
 type Match struct {
-	//TODO: dynamic opponent ports
 	SelfCharacter     string `json:"self_character"`
 	OpponentCharacter string `json:"opponent_character"`
-	Stage             string `json:"stage"`
-	Time              time.Time
+	SelfPort          int    `json:"self_port"`
+
+	// Port Number 1-4
+	Winner int `json:"winner"`
+
+	Stage string    `json:"stage"`
+	Time  time.Time `json:"time"`
 
 	DiskFrames []DiskFrame `json:"disk_frames"`
 }
