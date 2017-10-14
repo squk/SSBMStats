@@ -21,16 +21,24 @@ func IN_NEUTRAL(fb *FrameBuffer) bool {
 	return false
 }
 
-func FAILED_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame) {
+func FAILED_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame, descriptor FrameDescriptor) {
 	// we want older frames first so we analyze any hitstun in context with an
 	// approach
 	frames := fb.GetXFramesDescending(30)
+	//f0, _ := fb.Get(0)
+	//a0 := ACTION_NAMES[f0.SelfAction()]
+	//f1, _ := fb.Get(30)
+	//a1 := ACTION_NAMES[f1.SelfAction()]
+	//a0 := ACTION_NAMES[frames[0].SelfAction()]
+	//a1 := ACTION_NAMES[frames[30].SelfAction()]
+
+	//log.Println(a0, a1)
 
 	// stores the frame index where we approached
 	approach_frame := -1
 
 	for i, f := range frames {
-		if SELF_IS(ATTACKING, f) && OPPONENT_IS(IN_IMMEDIATE_NEUTRAL, f) {
+		if f.SelfIs(ATTACKING) && f.OpponentIs(IN_IMMEDIATE_NEUTRAL) {
 			approach_frame = i
 			break
 		}
@@ -46,16 +54,23 @@ func FAILED_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame) {
 	for i := approach_frame + 1; i < len(frames); i++ {
 		f := frames[i]
 
-		if SELF_IS(HIT, f) || SELF_IS(DEAD, f) {
+		if f.SelfIs(HIT) || f.SelfIs(DEAD) {
 			auth = TRUE
+
+			frame_number, _ := f.Players[0].GetUint(FRAME)
 
 			// failed approach. Write to disk
 			data = NewBasicDiskFrame(
-				//frames[i].Players[0].FrameNumber,
-				0,
 				frames[i].SelfAction(),
+				frames[i].SelfAction(), // TODO: self last attack
 				frames[i].OpponentAction(),
-				"FAILED_APPROACH")
+				frames[i].OpponentAction(), // TODO: opponent last attack
+			)
+
+			descriptor = FrameDescriptor{
+				FrameNumber:  frame_number,
+				WriteInvoker: "FAILED_APPROACH",
+			}
 			return
 		}
 	}
@@ -63,16 +78,23 @@ func FAILED_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame) {
 	return
 }
 
-func SUCCESSFUL_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame) {
+func SUCCESSFUL_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame, descriptor FrameDescriptor) {
 	// we want older frames first so we analyze any hitstun in context with an
 	// approach
 	frames := fb.GetXFramesDescending(30)
 
 	// stores the frame index where we approached
 	approach_frame := -1
+	//a0 := ACTION_NAMES[frames[0].SelfAction()]
+	//a1 := ACTION_NAMES[frames[30].SelfAction()]
+
+	//log.Println(a0, a1)
 
 	for i, f := range frames {
-		if SELF_IS(ATTACKING, f) && OPPONENT_IS(IN_IMMEDIATE_NEUTRAL, f) {
+		if f.SelfIs(ATTACKING) {
+		}
+
+		if f.SelfIs(ATTACKING) && f.OpponentIs(IN_IMMEDIATE_NEUTRAL) {
 			approach_frame = i
 			break
 		}
@@ -88,16 +110,24 @@ func SUCCESSFUL_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame) {
 	for i := approach_frame + 1; i < len(frames); i++ {
 		f := frames[i]
 
-		if !SELF_IS(HIT, f) && (OPPONENT_IS(DEAD, f) || OPPONENT_IS(HIT, f)) {
+		if !f.SelfIs(HIT) && (f.OpponentIs(DEAD) || f.OpponentIs(HIT)) {
 			auth = TRUE
+
+			frame_number, _ := f.Players[0].GetUint(FRAME)
 
 			// successful approach. Write to disk
 			data = NewBasicDiskFrame(
-				//frames[i].FrameNumber,
-				0,
 				frames[i].SelfAction(),
+				frames[i].SelfAction(), // TODO: self last attack
 				frames[i].OpponentAction(),
-				"SUCCESSFUL_APPROACH")
+				frames[i].OpponentAction(), // TODO: opponent last attack
+			)
+
+			descriptor = FrameDescriptor{
+				FrameNumber:  frame_number,
+				WriteInvoker: "SUCCESSFUL_APPROACH",
+			}
+
 			return
 		}
 	}

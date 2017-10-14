@@ -1,33 +1,39 @@
 package melee
 
-import (
-	sll "github.com/emirpasic/gods/lists/singlylinkedlist"
-)
+import arrayList "github.com/emirpasic/gods/lists/arraylist"
 
 // hold 1 second of frames in memory. Arbitraty ATM.
-const FRAME_BUFFER_SIZE = 60
+const FRAME_BUFFER_SIZE = 240
 
 type FrameBuffer struct {
-	Frames *sll.List
+	Frames *arrayList.List
 }
 
 func NewFrameBuffer() FrameBuffer {
-	return FrameBuffer{sll.New()}
+	return FrameBuffer{arrayList.New()}
 }
 
 func (fb *FrameBuffer) Insert(f Frame) {
-	fb.Frames.Prepend(f)
+	fb.Frames.Insert(0, f)
+	//fb.Frames.Add(f)
 
-	if fb.Frames.Size() > FRAME_BUFFER_SIZE {
-		fb.Frames.Remove(FRAME_BUFFER_SIZE)
+	if fb.Frames.Size() >= FRAME_BUFFER_SIZE {
+		//fb.Frames.Remove(0)
+		fb.Frames.Remove(FRAME_BUFFER_SIZE - 1)
 	}
 }
 
 // second return parameter is true if index is withing bounds of the list and
 // it is not empty
 func (fb *FrameBuffer) Get(i int) (Frame, bool) {
-	f, success := fb.Frames.Get(i)
-	return f.(Frame), success
+	v, exists := fb.Frames.Get(i)
+
+	if exists {
+		f, ok := v.(Frame)
+		return f, ok
+	} else {
+		return EmptyFrame(), false
+	}
 }
 
 // this method should only be called AFTER the most recent frame is inserted
@@ -58,13 +64,16 @@ func (fb *FrameBuffer) GetAscendingRange(start, end int) []Frame {
 // OLDER FRAMES PRECEDE NEWER ONES. Inclusive
 func (fb *FrameBuffer) GetDescendingRange(start, end int) []Frame {
 	frames := make([]Frame, end-start)
+	//var frames []Frame
 
-	for i := end; i <= start; i-- {
+	for i := end - 1; i >= start; i-- {
 		f, exists := fb.Frames.Get(i)
 		if exists {
 			frames[i] = f.(Frame)
+			//frames = append(frames, f.(Frame))
 		} else {
 			frames[i] = Frame{empty: true}
+			//frames = append(frames, Frame{empty: true})
 		}
 	}
 
@@ -73,10 +82,10 @@ func (fb *FrameBuffer) GetDescendingRange(start, end int) []Frame {
 
 // NEWER FRAMES PRECEDE OLDER ONES.
 func (fb *FrameBuffer) GetXFramesAscending(num int) []Frame {
-	return fb.GetAscendingRange(0, num-1)
+	return fb.GetAscendingRange(0, num)
 }
 
 // OLDER FRAMES PRECEDE NEWER ONES.
 func (fb *FrameBuffer) GetXFramesDescending(num int) []Frame {
-	return fb.GetDescendingRange(0, num-1)
+	return fb.GetDescendingRange(0, num)
 }

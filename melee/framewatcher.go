@@ -7,9 +7,8 @@ package melee
  */
 
 func (g *MeleeState) OnFrame() {
-	player_container := g.Players
+	frame := NewFrame(g.Players)
 
-	frame := NewFrame(player_container)
 	if g.MenuState == IN_GAME {
 		go FWriter.LogFrame(frame)
 	}
@@ -30,16 +29,23 @@ func (g *MeleeState) AssignSelfPort() {
 // Loop through all Players that aren't us and mark them as opponent if they've
 // chosen a character
 func (g *MeleeState) InferOpponentPorts() {
-	for i, player := range g.Players {
-		if char, ok := player.GetCharacter(); ok != nil {
-			if char != UNKNOWN_CHARACTER {
-				g.OpponentPorts = append(g.OpponentPorts, i)
+	FWriter.Match.OpponentCharacters = []string{}
+	FWriter.Match.OpponentPorts = PortList{}
 
-				chars := &FWriter.Match.OpponentCharacters
-				*chars = append(*chars, CHARACTER_NAMES[char])
+	for i := 1; i < 5; i++ {
+		if i != g.SelfPort {
+			player := g.Players[i]
 
-				ports := &FWriter.Match.OpponentPorts
-				*ports = append(*ports, Port(i))
+			if char, ok := player.GetCharacter(); ok == nil {
+				if char != UNKNOWN_CHARACTER {
+					g.OpponentPorts = append(g.OpponentPorts, i)
+
+					chars := &FWriter.Match.OpponentCharacters
+					*chars = append(*chars, CHARACTER_NAMES[char])
+
+					ports := &FWriter.Match.OpponentPorts
+					*ports = append(*ports, Port(i))
+				}
 			}
 		}
 	}

@@ -82,6 +82,7 @@ func (g *MeleeState) AssignPlayerValues(index int, state StateID, value []byte) 
 
 	if state == FRAME {
 		g.FrameNumber = bigEndianInt
+		g.Players[0].SetUint(FRAME, bigEndianInt)
 	} else if state == STAGE {
 		g.SetStage(Stage((littleEndianInt >> 8) & 0xFF))
 	} else if state == MENU_STATE {

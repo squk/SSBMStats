@@ -10,7 +10,7 @@ const (
 
 // More than 2 players are currently in neutral
 func IN_IMMEDIATE_NEUTRAL(p Player) bool {
-	if a, ok := p.GetPlayerAction(); ok != nil {
+	if a, ok := p.GetPlayerAction(); ok == nil {
 		if a.IsNeutral() {
 			return true
 		}
@@ -20,7 +20,7 @@ func IN_IMMEDIATE_NEUTRAL(p Player) bool {
 }
 
 func DEAD(p Player) bool {
-	if a, ok := p.GetPlayerAction(); ok != nil {
+	if a, ok := p.GetPlayerAction(); ok == nil {
 		if a.IsDead() {
 			return true
 		}
@@ -30,7 +30,7 @@ func DEAD(p Player) bool {
 }
 
 func HIT(p Player) bool {
-	if a, ok := p.GetPlayerAction(); ok != nil {
+	if a, ok := p.GetPlayerAction(); ok == nil {
 		if a.IsDamage() {
 			return true
 		}
@@ -41,7 +41,7 @@ func HIT(p Player) bool {
 
 // Approaching is analogous to attacking for now.
 func ATTACKING(p Player) bool {
-	if a, ok := p.GetPlayerAction(); ok != nil {
+	if a, ok := p.GetPlayerAction(); ok == nil {
 		if a.IsAttack() {
 			return true
 		}
@@ -50,7 +50,7 @@ func ATTACKING(p Player) bool {
 	return false
 }
 
-func PortsInState(CHECK StateCheck, f Frame) PortList {
+func (f Frame) PortsInState(CHECK StateCheck) PortList {
 	ports := PortList{}
 
 	// TODO: Make a proper iterator for the ports we care about...
@@ -66,11 +66,11 @@ func PortsInState(CHECK StateCheck, f Frame) PortList {
 	return ports
 }
 
-func SELF_IS(CHECK StateCheck, f Frame) bool {
+func (f Frame) SelfIs(CHECK StateCheck) bool {
 	return CHECK(f.Players[FWriter.GetSelfPort()])
 }
 
-func OPPONENT_IS(CHECK StateCheck, f Frame) bool {
+func (f Frame) OpponentIs(CHECK StateCheck) bool {
 	for _, o := range FWriter.GetOpponentPorts() {
 		if CHECK(f.Players[o]) {
 			return true
@@ -78,8 +78,4 @@ func OPPONENT_IS(CHECK StateCheck, f Frame) bool {
 	}
 
 	return false
-}
-
-func SELF_ACTION() PlayerAction {
-	return UNKNOWN_ANIMATION
 }

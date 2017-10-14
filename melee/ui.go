@@ -201,9 +201,9 @@ func (c *ConsoleUI) DrawPlayerTableBox() {
 		//[]string{"PlayerAction"},
 	}
 	rows1[0][GameState.SelfPort] = "[" + rows1[0][GameState.SelfPort] + "](fg-red)"
-	for _, p := range GameState.OpponentPorts {
-		rows1[0][GameState.SelfPort] = "[" + rows1[0][p] + "](fg-cyan)"
-	}
+	//for _, p := range GameState.OpponentPorts {
+	//rows1[0][GameState.SelfPort] = "[" + rows1[0][p] + "](fg-cyan)"
+	//}
 
 	rows1[1] = append(rows1[1][0:1], character...)
 	rows1[2] = append(rows1[2][0:1], stock...)

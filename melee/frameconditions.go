@@ -3,16 +3,16 @@ package melee
 var L_CANCEL_OPPORTUNE bool // prevents multiple frames being marked as a successful L-Cancel
 
 // returns a DiskFrame and whether or not that DiskFrame should be logged
-func L_CANCEL_PASS(f Frame) (auth WriteAuth, data DiskFrame) {
+func L_CANCEL_PASS(f Frame) (auth WriteAuth, data DiskFrame, desc FrameDescriptor) {
 	auth = INDETERMINATE
 
 	if !f.Empty() {
 		action, _ := f.Players[GameState.SelfPort].GetPlayerAction()
+		//log.Println(ACTION_NAMES[action])
 
 		if !L_CANCEL_OPPORTUNE {
-			animation_speed, _ := f.Players[GameState.SelfPort].GetFloat(SPEED_ANIMATION)
 			char, _ := f.Players[GameState.SelfPort].GetCharacter()
-
+			animation_speed, _ := f.Players[GameState.SelfPort].GetFloat(SPEED_ANIMATION)
 			if action.CanLCancel() {
 				L_CANCEL_OPPORTUNE = true
 				animation := 0
@@ -40,11 +40,19 @@ func L_CANCEL_PASS(f Frame) (auth WriteAuth, data DiskFrame) {
 					msg = "L_CANCEL_MISS"
 				}
 
+				frame_number, _ := f.Players[0].GetUint(FRAME)
 				data = NewBasicDiskFrame(
-					GameState.FrameNumber,
-					action,
+					f.SelfAction(),
+					f.SelfAction(), // TODO: self last attack
 					f.OpponentAction(),
-					msg)
+					f.OpponentAction(), // TODO: opponent last attack
+				)
+
+				desc = FrameDescriptor{
+					FrameNumber:  frame_number,
+					WriteInvoker: msg,
+				}
+
 			}
 		} else {
 			if !action.CanLCancel() {
@@ -53,5 +61,5 @@ func L_CANCEL_PASS(f Frame) (auth WriteAuth, data DiskFrame) {
 		}
 	}
 
-	return auth, data
+	return auth, data, desc
 }

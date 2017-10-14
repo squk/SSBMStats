@@ -171,3 +171,36 @@ func (p *Player) GetCharacterString() string {
 	c, _ := p.GetCharacter()
 	return CHARACTER_NAMES[c]
 }
+
+func (pc *PlayerContainer) DeepCopy() PlayerContainer {
+	done := make(chan bool)
+
+	new_players := PlayerContainer{}
+	go func() {
+		for i, p := range pc {
+			new_players[i] = p.DeepCopy()
+		}
+		done <- true
+	}()
+
+	<-done
+
+	return new_players
+}
+
+func (p *Player) DeepCopy() Player {
+	done := make(chan bool)
+
+	map_copy := make(map[StateID]interface{})
+
+	go func() {
+		for k, v := range p.Values {
+			map_copy[k] = v
+		}
+		done <- true
+	}()
+
+	<-done
+
+	return Player{map_copy, sync.Mutex{}}
+}

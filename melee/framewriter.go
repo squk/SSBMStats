@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"gopkg.in/fatih/set.v0"
 )
 
 /*
@@ -22,6 +20,7 @@ type FrameWriter struct {
 	Mutex       sync.Mutex
 	FrameBuffer *FrameBuffer
 	Match       Match
+	validator   *FrameValidator
 }
 
 type Match struct {
@@ -37,19 +36,21 @@ type Match struct {
 	Stage string    `json:"stage"`
 	Time  time.Time `json:"time"`
 
-	DiskFrames  []DiskFrame `json:"disk_frames"`
-	ActiveFlags *set.Set    `json:"active_flags"`
+	DiskFrames map[FrameDescriptor]DiskFrame `json:"disk_frames"`
 }
 
 func NewFrameWriter() *FrameWriter {
 	fb := NewFrameBuffer()
+	fv := NewFrameValidator(&fb)
 
 	fw := FrameWriter{
 		Mutex:       sync.Mutex{},
 		FrameBuffer: &fb,
+		validator:   &fv,
 		Match: Match{
-			DiskFrames:  make([]DiskFrame, 1),
-			ActiveFlags: set.New(),
+			DiskFrames:    make(map[FrameDescriptor]DiskFrame, 1),
+			SelfPort:      1,
+			OpponentPorts: PortList{2},
 		},
 	}
 
@@ -57,26 +58,21 @@ func NewFrameWriter() *FrameWriter {
 }
 
 func NewStatFileName() string {
-	//u, _ := uuid.NewV4()
 	u := time.Now().Format("2006-01-02T15:04:05.999999-07:00")
 	name := "./stats/" + u + ".json"
 	return name
 }
 
 func (fw *FrameWriter) LogFrame(f Frame) {
-	fw.FrameBuffer.Insert(f)
-
-	validator := NewFrameValidator(fw.FrameBuffer)
-	_, exists := fw.FrameBuffer.GetCurrent()
-
-	if exists {
-		validator.CheckAll()
+	if !f.Empty() {
+		fw.FrameBuffer.Insert(f)
+		fw.validator.CheckAll()
 	}
 }
 
-func (fw *FrameWriter) Write(data DiskFrame) {
+func (fw *FrameWriter) Write(data DiskFrame, desc FrameDescriptor) {
 	fw.Mutex.Lock()
-	fw.Match.DiskFrames = append(fw.Match.DiskFrames, data)
+	fw.Match.DiskFrames[desc] = data
 	fw.Mutex.Unlock()
 }
 
@@ -99,7 +95,7 @@ func (fw *FrameWriter) Flush() {
 
 		encoded, _ := json.Marshal(fw.Match)
 		fw.Writer.Write(encoded)
-		fw.Match.DiskFrames = make([]DiskFrame, 1)
+		fw.Match.DiskFrames = make(map[FrameDescriptor]DiskFrame, 1)
 	}
 
 	if fw.Writer != nil && fw.StatsFile != nil {
@@ -115,10 +111,10 @@ func (fw *FrameWriter) GenerateSummaryText() (text string) {
 
 	CUI.ClearLog()
 
-	for _, data := range fw.Match.DiskFrames {
-		if data.BasicFrame.Message == "L_CANCEL_PASS" {
+	for k, _ := range fw.Match.DiskFrames {
+		if k.WriteInvoker == "L_CANCEL_PASS" {
 			l_pass++
-		} else if data.BasicFrame.Message == "L_CANCEL_MISS" {
+		} else if k.WriteInvoker == "L_CANCEL_MISS" {
 			l_miss++
 		}
 	}
@@ -138,17 +134,17 @@ func (fw *FrameWriter) Close() {
 	fw.StatsFile.Close()
 }
 
-func (fw *FrameWriter) AddFlag(f Flag) {
-	fw.Match.ActiveFlags.Add(f)
-}
+//func (fw *FrameWriter) AddFlag(f Flag) {
+//fw.Match.ActiveFlags.Add(f)
+//}
 
-func (fw *FrameWriter) RemoveFlag(f Flag) {
-	fw.Match.ActiveFlags.Remove(f)
-}
+//func (fw *FrameWriter) RemoveFlag(f Flag) {
+//fw.Match.ActiveFlags.Remove(f)
+//}
 
-func (fw *FrameWriter) CheckFlag(f Flag) bool {
-	return fw.Match.ActiveFlags.Has(f)
-}
+//func (fw *FrameWriter) CheckFlag(f Flag) bool {
+//return fw.Match.ActiveFlags.Has(f)
+//}
 
 func (fw *FrameWriter) GetSelfPort() Port {
 	return fw.Match.SelfPort

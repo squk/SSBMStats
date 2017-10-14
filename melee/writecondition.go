@@ -14,10 +14,10 @@ const (
 )
 
 // checks for a condition requiring multiple frames
-type BufferCondition func(fb *FrameBuffer) (WriteAuth, DiskFrame)
+type BufferCondition func(fb *FrameBuffer) (WriteAuth, DiskFrame, FrameDescriptor)
 
 // checks for a condition only requiring a single frame
-type FrameCondition func(f Frame) (WriteAuth, DiskFrame)
+type FrameCondition func(f Frame) (WriteAuth, DiskFrame, FrameDescriptor)
 
 type FrameValidator struct {
 	FrameBuffer *FrameBuffer
@@ -32,6 +32,9 @@ func NewFrameValidator(fb *FrameBuffer) FrameValidator {
 
 	f_conditions["L_CANCEL_PASS"] = L_CANCEL_PASS
 
+	b_conditions["SUCCESSFUL_APPROACH"] = SUCCESSFUL_APPROACH
+	b_conditions["FAILED_APPROACH"] = FAILED_APPROACH
+
 	fv := FrameValidator{fb, f_conditions, b_conditions}
 	return fv
 }
@@ -43,14 +46,14 @@ func (fv *FrameValidator) CheckAll() {
 		for _, fc := range fv.FrameConditions {
 			// a Frame will only be logged by a FrameCondition of the
 			// WriteAuth is set to TRUE
-			if ok, data := fc(frame); ok == TRUE {
-				FWriter.Write(data)
+			if ok, data, desc := fc(frame); ok == TRUE {
+				FWriter.Write(data, desc)
 			}
 		}
 
 		for _, bc := range fv.BufferConditions {
-			if ok, _ := bc(fv.FrameBuffer); ok == TRUE {
-
+			if ok, data, desc := bc(fv.FrameBuffer); ok == TRUE {
+				FWriter.Write(data, desc)
 			}
 		}
 

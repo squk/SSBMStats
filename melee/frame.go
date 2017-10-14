@@ -14,32 +14,38 @@ type Frame struct {
 }
 
 type BasicFrame struct {
-	// no discrete use now for FrameNumber but may be useful later to
-	// always store this.  Violates YAGNI for good reason
-	FrameNumber    uint32 `json:"frame_number"`
-	PlayerAction   string `json:"player_action"`
-	OpponentAction string `json:"opponent_action"`
-	Message        string `json:"message"`
+	SelfAction         string `json:"self_action"`
+	SelfLastAttack     string `json:"self_last_attack"`
+	OpponentAction     string `json:"opponent_action"`
+	OpponentLastAttack string `json:"opponent_last_attack"`
+}
+
+type FrameDescriptor struct {
+	FrameNumber  uint32
+	WriteInvoker string
 }
 
 // Data actually written to disk. For the most part this should be used
 // similar to a C union
 type DiskFrame struct {
 	BasicFrame    BasicFrame `json:"basic_frame"`
-	DetailedFrame Frame      `json:"detailed_frame"`
+	DetailedFrame *Frame     `json:"detailed_frame"`
 }
 
-// Creates our Players slice only containing ports 1-4 (ignoring the global 0
-// port and the psuedo 5-8 ports
 func NewFrame(players PlayerContainer) Frame {
-	f := Frame{
-		players, false,
-	}
-	return f
+	return Frame{players.DeepCopy(), false}
 }
 
-func (f *Frame) Empty() bool {
+func EmptyFrame() Frame {
+	return Frame{empty: true}
+}
+
+func (f Frame) Empty() bool {
 	return f.empty
+}
+
+func (f Frame) DeepCopy() Frame {
+	return Frame{f.Players.DeepCopy(), f.Empty()}
 }
 
 type OpponentIterator struct {
@@ -70,7 +76,7 @@ func (it *OpponentIterator) Value() (Port, Player) {
 	return it.current, it.players[it.current]
 }
 
-func (f Frame) SelfAction() PlayerAction {
+func (f *Frame) SelfAction() PlayerAction {
 	a, _ := f.Players[FWriter.GetSelfPort()].GetPlayerAction()
 	return a
 }
@@ -89,13 +95,14 @@ func (f Frame) OpponentAction() PlayerAction {
 	return action
 }
 
-func NewBasicDiskFrame(f_num uint32, action PlayerAction, opponent PlayerAction, msg string) DiskFrame {
+func NewBasicDiskFrame(action PlayerAction, self_attack PlayerAction, opponent PlayerAction, opponent_attack PlayerAction) DiskFrame {
 	return DiskFrame{
 		BasicFrame: BasicFrame{
-			FrameNumber:    f_num,
-			PlayerAction:   ACTION_NAMES[action],
-			OpponentAction: ACTION_NAMES[opponent],
-			Message:        msg,
+			SelfAction:         ACTION_NAMES[action],
+			SelfLastAttack:     ACTION_NAMES[self_attack],
+			OpponentAction:     ACTION_NAMES[opponent],
+			OpponentLastAttack: ACTION_NAMES[opponent_attack],
 		},
+		DetailedFrame: nil,
 	}
 }

@@ -6,12 +6,13 @@
 - [ ] Read Dolphin memory in Windows
 - [x] Read Melee player information
 - [x] Concurrency (almost all functionality should be concurrent)
-- [ ] Usable UI
+- [ ] Usable UI (WIP)
 - [ ] Place importance on stats at high percent/low stock
 
 ## Secondary Task List (before MVP)
 - [ ] Installable package on Windows
 - [ ] Auto-Updating
+- [ ] APM Calculation
 
 ## Questionable Tasks
 
