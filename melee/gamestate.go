@@ -42,14 +42,19 @@ func NewMeleeState() *MeleeState {
 func (g *MeleeState) Update() {
 	go func() {
 		for Dolphin.Looping {
-			go Dolphin.ReadSocket()
+			go func() {
+				err := Dolphin.ReadMemory()
+				if err != nil {
+					log.Println(err)
+				}
+			}()
 
 			m := <-Dolphin.MemoryUpdate
 
-			playerIndex := g.MemoryMap[m.Address].PlayerIndex
-			state := g.MemoryMap[m.Address].StateID
+			playerIndex := g.MemoryMap[string(m.Address)].PlayerIndex
+			state := g.MemoryMap[string(m.Address)].StateID
 
-			g.AssignPlayerValues(playerIndex, state, m.Value)
+			g.AssignPlayerValues(playerIndex, state, []byte(m.Value))
 
 			if state == FRAME {
 				g.OnFrame()

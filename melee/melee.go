@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"time"
+	"fmt"
 
 	"github.com/ctnieves/golphin"
 )
@@ -13,41 +14,43 @@ var CUI *ConsoleUI
 var GameState *MeleeState
 var FWriter *FrameWriter
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func Init() (err error) {
 	// setup log
 	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	check(err)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 
 	log.SetFlags(log.Lshortfile)
 	log.SetOutput(f)
 
 	// setup Golphin and memory locations
 	Dolphin = golphin.New()
-	err = Dolphin.SetPath("/Users/christian/Desktop/FM/Dolphin.app/Contents/Resources/User")
-	check(err)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 
 	err = Dolphin.Init()
-	check(err)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 
 	for _, a := range Locations {
 		Dolphin.Subscribe(a)
 	}
-	Dolphin.WriteLocations()
+	Dolphin.CommitLocations()
 
-	CUI = NewConsoleUI()
+	//CUI = NewConsoleUI()
 	GameState = NewMeleeState()
 	FWriter = NewFrameWriter()
 
 	go func() {
 		for Dolphin.Looping {
 			time.Sleep(200 * time.Millisecond)
-			CUI.Draw()
+			//CUI.Draw()
 		}
 	}()
 
