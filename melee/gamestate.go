@@ -2,7 +2,7 @@ package melee
 
 import (
 	"encoding/binary"
-	"log"
+	//"log"
 	"math"
 )
 
@@ -43,12 +43,7 @@ func NewMeleeState() *MeleeState {
 func (g *MeleeState) Update() {
 	go func() {
 		for Dolphin.Looping {
-			go func() {
-				err := Dolphin.ReadMemory()
-				if err != nil {
-					log.Println(err)
-				}
-			}()
+			go Dolphin.ReadMemory()
 
 			m := <-Dolphin.MemoryUpdate
 

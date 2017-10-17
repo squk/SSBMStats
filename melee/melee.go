@@ -38,19 +38,19 @@ func Init() (err error) {
 		return err
 	}
 
-	for _, a := range Locations {
-		Dolphin.Subscribe(a)
+	for k, _ := range GetMemoryMap() {
+		Dolphin.Subscribe(k)
 	}
 	Dolphin.CommitLocations()
 
-	//CUI = NewConsoleUI()
+	CUI = NewConsoleUI()
 	GameState = NewMeleeState()
 	FWriter = NewFrameWriter()
 
 	go func() {
 		for Dolphin.Looping {
 			time.Sleep(200 * time.Millisecond)
-			//CUI.Draw()
+			CUI.Draw()
 		}
 	}()
 
