@@ -54,11 +54,11 @@ func (c *ConsoleUI) AdjustY(y int) {
 }
 
 func (c *ConsoleUI) DrawDefault() {
+	// press q to quit
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
-		// press q to quit
+		ui.StopLoop()
 		FWriter.Close()
 		GameState.StopLoop()
-		ui.StopLoop()
 	})
 	ui.Handle("/sys/kbd/v", func(ui.Event) {
 		ui.Clear()
@@ -70,7 +70,6 @@ func (c *ConsoleUI) DrawDefault() {
 	ui.Handle("/sys/kbd/<right>", func(ui.Event) {
 		GameState.IncreasePort()
 	})
-
 	c.DrawFrameBox()
 }
 

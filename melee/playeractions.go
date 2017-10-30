@@ -22,6 +22,10 @@ const (
 
 type PlayerAction uint32
 
+func (a PlayerAction) String() string {
+	return ACTION_NAMES[a]
+}
+
 const (
 	DEAD_DOWN              PlayerAction = 0x0
 	DEAD_LEFT                           = 0x1

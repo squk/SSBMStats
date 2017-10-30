@@ -1,10 +1,10 @@
 package melee
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
-	"fmt"
 
 	"github.com/ctnieves/golphin"
 )

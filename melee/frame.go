@@ -14,15 +14,9 @@ type Frame struct {
 }
 
 type BasicFrame struct {
-	SelfAction         string `json:"self_action"`
-	SelfLastAttack     string `json:"self_last_attack"`
-	OpponentAction     string `json:"opponent_action"`
-	OpponentLastAttack string `json:"opponent_last_attack"`
-}
-
-type FrameDescriptor struct {
 	FrameNumber  uint32
 	WriteInvoker string
+	Data         interface{}
 }
 
 // Data actually written to disk. For the most part this should be used
@@ -46,6 +40,33 @@ func (f Frame) Empty() bool {
 
 func (f Frame) DeepCopy() Frame {
 	return Frame{f.Players.DeepCopy(), f.Empty()}
+}
+
+func (f *Frame) SelfAction() PlayerAction {
+	a := f.Players[FWriter.GetSelfPort()].Action()
+	return a
+}
+
+// TODO: report more than one? I don't care much about dubs...
+func (f Frame) OpponentAction() PlayerAction {
+	action := PlayerAction(UNKNOWN_ANIMATION)
+
+	it := NewOpponentIterator(f)
+	for it.Next() {
+		_, player := it.Value()
+		action = player.Action()
+		return action
+	}
+
+	return action
+}
+
+func (f *Frame) Number() uint32 {
+	frame_number, err := f.Players[0].GetUint(FRAME)
+	if err != nil {
+		return 0
+	}
+	return frame_number
 }
 
 type OpponentIterator struct {
@@ -74,35 +95,4 @@ func (it *OpponentIterator) Next() bool {
 
 func (it *OpponentIterator) Value() (Port, Player) {
 	return it.current, it.players[it.current]
-}
-
-func (f *Frame) SelfAction() PlayerAction {
-	a, _ := f.Players[FWriter.GetSelfPort()].GetPlayerAction()
-	return a
-}
-
-// TODO: report more than one? I don't care much about dubs...
-func (f Frame) OpponentAction() PlayerAction {
-	action := PlayerAction(UNKNOWN_ANIMATION)
-
-	it := NewOpponentIterator(f)
-	for it.Next() {
-		_, player := it.Value()
-		action, _ = player.GetPlayerAction()
-		return action
-	}
-
-	return action
-}
-
-func NewBasicDiskFrame(action PlayerAction, self_attack PlayerAction, opponent PlayerAction, opponent_attack PlayerAction) DiskFrame {
-	return DiskFrame{
-		BasicFrame: BasicFrame{
-			SelfAction:         ACTION_NAMES[action],
-			SelfLastAttack:     ACTION_NAMES[self_attack],
-			OpponentAction:     ACTION_NAMES[opponent],
-			OpponentLastAttack: ACTION_NAMES[opponent_attack],
-		},
-		DetailedFrame: nil,
-	}
 }

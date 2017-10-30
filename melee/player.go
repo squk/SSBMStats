@@ -167,6 +167,11 @@ func (p *Player) GetControllerPrevious() (ret ControllerBits) {
 	return
 }
 
+func (p Player) Action() PlayerAction {
+	a, _ := p.GetPlayerAction()
+	return a
+}
+
 func (p *Player) GetCharacterString() string {
 	c, _ := p.GetCharacter()
 	return CHARACTER_NAMES[c]

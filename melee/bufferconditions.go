@@ -1,158 +1,121 @@
 package melee
 
-// check if both players have been in neutral for the last 15 frames. Arbitrary
-// number
-// probably wont use this now that I think about it... keeping it for now
-func IN_NEUTRAL(fb *FrameBuffer) bool {
-	// we want newer frames first because more recent info has precendence
-	// since this gets ran every frame anyway.
-	//frames := fb.GetXFramesAscending(30)
-
-	//for _, f := range frames {
-	//// If only 1 player is in neutral, it's most likely not considered an
-	//// entirely neutral situtation. e.g the other player might be
-	//// approaching. This will probably be tweaked later on.
-	//if len(PortsInState(f, IN_IMMEDIATE_NEUTRAL)) <= 1 {
-	//FWriter.RemoveFlag(NEUTRAL_FLAG)
-	//}
-	//}
-
-	//FWriter.AddFlag(NEUTRAL_FLAG)
-	return false
+type ApproachData struct {
+	StartingFrame  uint32 `json:"starting_frame"`
+	SelfAction     string `json:"self_action"`
+	OpponentAction string `json:"opponent_action"`
+	ApproachOption string `json:"last_self_attack"`
+	DefenseOption  string `json:"last_opponentf_attack"`
 }
 
-func FAILED_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame, descriptor FrameDescriptor) {
+func APPROACH_CHECK(fb *FrameBuffer) (auth WriteAuth, diskframe DiskFrame) {
 	// we want older frames first so we analyze any hitstun in context with an
 	// approach
 	frames := fb.GetXFramesDescending(30)
-	//f0, _ := fb.Get(0)
-	//a0 := ACTION_NAMES[f0.SelfAction()]
-	//f1, _ := fb.Get(30)
-	//a1 := ACTION_NAMES[f1.SelfAction()]
-	//a0 := ACTION_NAMES[frames[0].SelfAction()]
-	//a1 := ACTION_NAMES[frames[30].SelfAction()]
-
-	//log.Println(a0, a1)
 
 	// stores the frame index where we approached
-	approach_frame := -1
+	var approach_frame uint32 = 0
+	var approach_index uint32 = 0
+	//var defense_option PlayerAction = UNKNOWN_ANIMATION
+	var approach_option PlayerAction = UNKNOWN_ANIMATION
 
 	for i, f := range frames {
-		if f.SelfIs(ATTACKING) && f.OpponentIs(IN_IMMEDIATE_NEUTRAL) {
-			approach_frame = i
+		if f.Self().Is(ATTACKING) && f.Opponent().Is(IN_IMMEDIATE_NEUTRAL) {
+			approach_index = uint32(i)
+			approach_frame = f.Number()
+			approach_option = f.SelfAction()
 			break
 		}
 	}
 
-	if approach_frame == -1 {
+	if approach_frame == 0 || approach_index == 0 {
 		auth = INDETERMINATE
 		return
 	}
 
 	// Check if punished for approach. Only check frames newer than the one we
 	// approached on
-	for i := approach_frame + 1; i < len(frames); i++ {
+	for i := approach_index + 1; i < uint32(len(frames)); i++ {
 		f := frames[i]
 
-		if f.SelfIs(HIT) || f.SelfIs(DEAD) {
-			auth = TRUE
+		// Successful approach
+		if !f.Self().Is(HIT) && (f.Opponent().Is(DEAD) || f.Opponent().Is(HIT)) {
+			diskframe = DiskFrame{
+				BasicFrame: BasicFrame{
+					FrameNumber: approach_frame,
+					Data: ApproachData{
+						StartingFrame:  approach_frame,
+						SelfAction:     frames[approach_index].SelfAction().String(),
+						OpponentAction: frames[approach_index].OpponentAction().String(),
+						ApproachOption: approach_option.String(),
+						DefenseOption:  frames[i].OpponentAction().String(),
+					},
 
-			frame_number, _ := f.Players[0].GetUint(FRAME)
+					WriteInvoker: "SUCCESSFUL_APPROACH",
+				},
+				DetailedFrame: nil,
+			}
+			return
+		}
+
+		// Failed approach
+		if f.Self().Is(HIT) || f.Self().Is(DEAD) {
+			auth = TRUE
 
 			// failed approach. Write to disk
-			data = NewBasicDiskFrame(
-				frames[i].SelfAction(),
-				frames[i].SelfAction(), // TODO: self last attack
-				frames[i].OpponentAction(),
-				frames[i].OpponentAction(), // TODO: opponent last attack
-			)
+			diskframe = DiskFrame{
+				BasicFrame: BasicFrame{
+					FrameNumber: approach_frame,
+					Data: ApproachData{
+						StartingFrame:  approach_frame,
+						SelfAction:     frames[i].SelfAction().String(),
+						ApproachOption: approach_option.String(),
+						OpponentAction: frames[i].OpponentAction().String(),
+						DefenseOption:  frames[i].OpponentAction().String(),
+						//DefenseOption:  fb.LastOpponentAttack(InRange(approach_index, i)).String(),
+					},
 
-			descriptor = FrameDescriptor{
-				FrameNumber:  frame_number,
-				WriteInvoker: "FAILED_APPROACH",
+					WriteInvoker: "FAILED_APPROACH",
+				},
+				DetailedFrame: nil,
 			}
 			return
+
 		}
 	}
 
 	return
 }
 
-func SUCCESSFUL_APPROACH(fb *FrameBuffer) (auth WriteAuth, data DiskFrame, descriptor FrameDescriptor) {
-	// we want older frames first so we analyze any hitstun in context with an
-	// approach
-	frames := fb.GetXFramesDescending(30)
-
-	// stores the frame index where we approached
-	approach_frame := -1
-	//a0 := ACTION_NAMES[frames[0].SelfAction()]
-	//a1 := ACTION_NAMES[frames[30].SelfAction()]
-
-	//log.Println(a0, a1)
-
-	for i, f := range frames {
-		if f.SelfIs(ATTACKING) {
-		}
-
-		if f.SelfIs(ATTACKING) && f.OpponentIs(IN_IMMEDIATE_NEUTRAL) {
-			approach_frame = i
-			break
-		}
-	}
-
-	if approach_frame == -1 {
-		auth = INDETERMINATE
-		return
-	}
-
-	// Check if punished for approach. Only check frames newer than the one we
-	// approached on
-	for i := approach_frame + 1; i < len(frames); i++ {
-		f := frames[i]
-
-		if !f.SelfIs(HIT) && (f.OpponentIs(DEAD) || f.OpponentIs(HIT)) {
-			auth = TRUE
-
-			frame_number, _ := f.Players[0].GetUint(FRAME)
-
-			// successful approach. Write to disk
-			data = NewBasicDiskFrame(
-				frames[i].SelfAction(),
-				frames[i].SelfAction(), // TODO: self last attack
-				frames[i].OpponentAction(),
-				frames[i].OpponentAction(), // TODO: opponent last attack
-			)
-
-			descriptor = FrameDescriptor{
-				FrameNumber:  frame_number,
-				WriteInvoker: "SUCCESSFUL_APPROACH",
-			}
-
-			return
-		}
-	}
-
-	return
+func (fb *FrameBuffer) LastSelfAttack(start int) PlayerAction {
+	return UNKNOWN_ANIMATION
 }
 
-func LAST_ATTACK(fb *FrameBuffer) []PlayerAction {
+func (fb *FrameBuffer) LastAction(start, end int) []PlayerAction {
 	attacks := []PlayerAction{
 		UNKNOWN_ANIMATION, UNKNOWN_ANIMATION,
 		UNKNOWN_ANIMATION, UNKNOWN_ANIMATION,
 	}
-	frames := fb.GetXFramesAscending(60)
+	frames := fb.GetRange(start, end)
 
 	for _, f := range frames {
-		if f.SelfAction().IsAttack() {
-			attacks[FWriter.GetSelfPort()] = f.SelfAction()
-		}
-
-		it := NewOpponentIterator(f)
-		for it.Next() {
-			port, player := it.Value()
-			attacks[port], _ = player.GetPlayerAction()
+		for i := 0; i < 4; i++ {
+			action := f.Players[i].Action()
+			if action.IsAttack() {
+				attacks[i] = action
+			}
 		}
 	}
 
 	return attacks
+}
+
+// alias for GetAscendingRange
+func (fb *FrameBuffer) InRange(start, end int) []Frame {
+	return fb.GetAscendingRange(start, end)
+}
+
+func (fb *FrameBuffer) At(i int) []Frame {
+	f, _ := fb.Get(i)
+	return []Frame{f}
 }

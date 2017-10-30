@@ -36,7 +36,7 @@ type Match struct {
 	Stage string    `json:"stage"`
 	Time  time.Time `json:"time"`
 
-	DiskFrames map[FrameDescriptor]DiskFrame `json:"disk_frames"`
+	DiskFrames []DiskFrame `json:"disk_frames"`
 }
 
 func NewFrameWriter() *FrameWriter {
@@ -48,7 +48,7 @@ func NewFrameWriter() *FrameWriter {
 		FrameBuffer: &fb,
 		validator:   &fv,
 		Match: Match{
-			DiskFrames:    make(map[FrameDescriptor]DiskFrame, 1),
+			DiskFrames:    []DiskFrame{},
 			SelfPort:      1,
 			OpponentPorts: PortList{2},
 		},
@@ -70,9 +70,9 @@ func (fw *FrameWriter) LogFrame(f Frame) {
 	}
 }
 
-func (fw *FrameWriter) Write(data DiskFrame, desc FrameDescriptor) {
+func (fw *FrameWriter) Write(data DiskFrame) {
 	fw.Mutex.Lock()
-	fw.Match.DiskFrames[desc] = data
+	fw.Match.DiskFrames = append(fw.Match.DiskFrames, data)
 	fw.Mutex.Unlock()
 }
 
@@ -95,7 +95,7 @@ func (fw *FrameWriter) Flush() {
 
 		encoded, _ := json.Marshal(fw.Match)
 		fw.Writer.Write(encoded)
-		fw.Match.DiskFrames = make(map[FrameDescriptor]DiskFrame, 1)
+		fw.Match.DiskFrames = []DiskFrame{}
 	}
 
 	if fw.Writer != nil && fw.StatsFile != nil {
@@ -111,10 +111,10 @@ func (fw *FrameWriter) GenerateSummaryText() (text string) {
 
 	CUI.ClearLog()
 
-	for k, _ := range fw.Match.DiskFrames {
-		if k.WriteInvoker == "L_CANCEL_PASS" {
+	for _, f := range fw.Match.DiskFrames {
+		if f.BasicFrame.WriteInvoker == "L_CANCEL_PASS" {
 			l_pass++
-		} else if k.WriteInvoker == "L_CANCEL_MISS" {
+		} else if f.BasicFrame.WriteInvoker == "L_CANCEL_MISS" {
 			l_miss++
 		}
 	}
@@ -133,18 +133,6 @@ func (fw *FrameWriter) Close() {
 	fw.Flush()
 	fw.StatsFile.Close()
 }
-
-//func (fw *FrameWriter) AddFlag(f Flag) {
-//fw.Match.ActiveFlags.Add(f)
-//}
-
-//func (fw *FrameWriter) RemoveFlag(f Flag) {
-//fw.Match.ActiveFlags.Remove(f)
-//}
-
-//func (fw *FrameWriter) CheckFlag(f Flag) bool {
-//return fw.Match.ActiveFlags.Has(f)
-//}
 
 func (fw *FrameWriter) GetSelfPort() Port {
 	return fw.Match.SelfPort

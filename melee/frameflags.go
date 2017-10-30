@@ -66,16 +66,23 @@ func (f Frame) PortsInState(CHECK StateCheck) PortList {
 	return ports
 }
 
-func (f Frame) SelfIs(CHECK StateCheck) bool {
-	return CHECK(f.Players[FWriter.GetSelfPort()])
+func (p Player) Is(fn StateCheck) bool {
+	return fn(p)
 }
 
-func (f Frame) OpponentIs(CHECK StateCheck) bool {
+func (p Player) IsNot(fn StateCheck) bool {
+	return !fn(p)
+}
+
+func (f Frame) Self() Player {
+	return f.Players[FWriter.GetSelfPort()]
+	//return CHECK(f.Players[FWriter.GetSelfPort()])
+}
+
+func (f Frame) Opponent() Player {
 	for _, o := range FWriter.GetOpponentPorts() {
-		if CHECK(f.Players[o]) {
-			return true
-		}
+		return f.Players[o]
 	}
 
-	return false
+	return f.Players[3]
 }

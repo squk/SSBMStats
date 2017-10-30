@@ -45,6 +45,10 @@ func (fb *FrameBuffer) GetCurrent() (Frame, bool) {
 	return fb.Get(0)
 }
 
+func (fb *FrameBuffer) GetRange(start, end int) []Frame {
+	return fb.GetAscendingRange(start, end)
+}
+
 // NEWER FRAMES PRECEDE OLDER ONES. Inclusive.
 func (fb *FrameBuffer) GetAscendingRange(start, end int) []Frame {
 	frames := make([]Frame, end-start)
